@@ -1,7 +1,7 @@
 # ICS_IF Overview
 Serial servomotor control IP.  Provides Interactive Communication System(ICS) Interface to your FPGA.
-ICS spec is here[https://kondo-robot.com/faq/ics3-5_3-6softwaremanual_2](https://kondo-robot.com/faq/ics3-5_3-6softwaremanual_2)
-For now this repository showing an example of [vivado_cmake_helper](#https://github.com/akira-nishiyama/vivado_cmake_helper) usage.
+ICS spec is [here](https://kondo-robot.com/faq/ics3-5_3-6softwaremanual_2)
+For now this repository showing an example of [vivado_cmake_helper](https://github.com/akira-nishiyama/vivado_cmake_helper) usage.
 The functions are under construction.
 
 # Dependency
