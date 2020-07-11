@@ -42,7 +42,7 @@ mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=~/user_ip_repo -GNinja
 cmake --build .
-make install
+ninja install
 ```
 
 # Project Structure
