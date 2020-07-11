@@ -5,11 +5,11 @@ For now this repository showing an example of [vivado_cmake_helper](https://gith
 The functions are under construction.
 
 # Dependency
-Vivado 2019.2
-Vivado_HLS 2019.2
-CMake 3.1 or later
-Ninja(Make also works)
-vivado_cmake_helper
+Vivado 2019.2  
+Vivado_HLS 2019.2  
+CMake 3.1 or later  
+Ninja(Make also works)  
+vivado_cmake_helper  
 
 # Setup
 - Install Vivado.
