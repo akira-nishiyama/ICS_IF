@@ -7,6 +7,10 @@ find_file(HELPER_SCRIPT_IPX
 		NAME create_ip.tcl
 		HINTS $ENV{VIVADO_CMAKE_HELPER})
 
+find_file(HELPER_SCRIPT_PRJ_GEN
+		NAME project_generation.tcl
+		HINTS $ENV{VIVADO_CMAKE_HELPER})
+
 find_file(VIVADO_IPX_EXPORT_CMAKE
 		NAME vivado_ipx_export.cmake
 		HINTS $ENV{VIVADO_CMAKE_HELPER}
@@ -32,12 +36,17 @@ set(DISPLAY_IP_NAME "ICS_IF")
 #source list
 set(SRC_FILES "")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/interval_timer.v")
-#string(REPLACE ";" ":" SRC_FILES "${SRC_FILES}")
+string(REPLACE ";" ":" SRC_FILES "${SRC_FILES}")
 
 #testbench list
 set(TESTBENCH_FILES "")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v")
-#string(REPLACE ";" ":" TESTBENCH_FILES "${TESTBENCH_FILES}")
+string(REPLACE ";" ":" TESTBENCH_FILES "${TESTBENCH_FILES}")
+
+#ip_repo_path list
+set(IP_REPO_PATH "")
+list(APPEND IP_REPO_PATH "${CMAKE_CURRENT_BINARY_DIR}")
+string(REPLACE ";" ":" IP_REPO_PATH "${IP_REPO_PATH}")
 
 #create block design scripts
 set(BLOCK_DESIGN_TCL "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blockdesign.tcl")
@@ -47,6 +56,9 @@ include(${VIVADO_IPX_EXPORT_CMAKE})
 add_dependencies( ${PROJECT_NAME} ics_if_main)
 add_dependencies( ${PROJECT_NAME} ics_if_tx)
 add_dependencies( ${PROJECT_NAME} ics_if_rx)
+
+
+
 
 if(PRINT_VARIABLES)
 	message(STATUS "*** dump start cmake variables ***")
