@@ -48,6 +48,8 @@ initial begin
     interrupt_en <= 0;
     repeat(65536*11) @(posedge ap_clk);
     interrupt_en <= 1;
+    repeat(65536*11) @(posedge ap_clk);
+    $finish();
 end
 
 
