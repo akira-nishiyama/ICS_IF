@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
+enable_testing()
+
 
 find_program(   VIVADO_COMMAND
                 NAME vivado
@@ -47,6 +49,7 @@ set(RM_OPTION "-rf")
 set(SED "sed")
 set(MKDIR "mkdir")
 set(MKDIR_OPTION "-p")
+
 add_subdirectory(modules)
 
 set(VENDOR "Akira_Nishiyama")
@@ -89,19 +92,21 @@ add_dependencies( ${PROJECT_NAME} ics_if_tx)
 add_dependencies( ${PROJECT_NAME} ics_if_rx)
 
 #simulation
+set(DEPENDENCIES ${PROJECT_NAME})
+set(SIMULATION_DIR "${CMAKE_CURRENT_BINARY_DIR}/sim")
+file(MAKE_DIRECTORY ${SIMULATION_DIR}/work/xsim)
 add_custom_target(gen_all DEPENDS ${DEPENDENCIES})
 add_custom_target(compile_all DEPENDS gen_all)
 add_custom_target(elaborate_all DEPENDS compile_all)
 add_custom_target(sim_all DEPENDS elaborate_all)
 
+set(ADDITIONAL_VLOG_OPTS "-L uvm")
+set(ADDITIONAL_ELAB_OPTS "-L uvm")
+
 include(${VIVADO_ADD_SIM_CMAKE})
 
-set(DEPENDENCIES ${PROJECT_NAME})
-set(SIMULATION_DIR "${CMAKE_CURRENT_BINARY_DIR}/sim")
-file(MAKE_DIRECTORY ${SIMULATION_DIR}/work/xsim)
-
-add_sim(tb_interval_timer ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v" "")
-add_sim(tb_uvm_test ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv" tb_interval_timer)
+add_sim(tb_interval_timer ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v" ${ADDITIONAL_VLOG_OPTS} ${ADDITIONAL_ELAB_OPTS} "")
+add_sim(tb_uvm_test ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv" ${ADDITIONAL_VLOG_OPTS} ${ADDITIONAL_ELAB_OPTS} tb_interval_timer)
 
 if(PRINT_VARIABLES)
     message(STATUS "*** dump start cmake variables ***")
