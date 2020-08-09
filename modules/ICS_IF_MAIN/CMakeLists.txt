@@ -1,18 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
-find_program(HLS_COMMAND
-        NAME vivado_hls
-        HINTS ENV var
-        REQUIRED)
+enable_testing()
 
-find_file(HELPER_SCRIPT_HLS
-        NAME exec_vhls.tcl
-        HINTS $ENV{VIVADO_CMAKE_HELPER}
-        REQUIRED)
-
-find_file(VIVADO_HLS_EXPORT_CMAKE
-        NAME vivado_hls_export.cmake
-        HINTS $ENV{VIVADO_CMAKE_HELPER}
-        REQUIRED)
+find_package(   vivado_hls_cmake_helper
+                HINTS $ENV{VIVADO_CMAKE_HELPER}
+                REQUIRED)
 
 project(ics_if_main
     VERSION 0.1
