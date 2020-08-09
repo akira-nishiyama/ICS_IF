@@ -1,0 +1,3 @@
+[submodule "test/lib/uvm_gp_scoreboard"]
+	path = test/lib/uvm_gp_scoreboard
+	url = https://github.com/mwnock/uvm_component.git

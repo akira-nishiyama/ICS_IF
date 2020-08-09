@@ -8,6 +8,7 @@ endinterface
 module tb_uvm_test;
     `include "uvm_macros.svh"
     import uvm_pkg::*;
+    `include "gp_scoreboard.sv"
 
     class sample_seq_item extends uvm_sequence_item;
       rand logic [7:0] addr, data;
@@ -116,6 +117,7 @@ module tb_uvm_test;
         `uvm_component_utils(sample_env)
         `uvm_new_func
         sample_agent agent;
+        gp_scoreboard gp_scb;
         function void build_phase(uvm_phase phase);
             super.build_phase(phase);
             agent = sample_agent::type_id::create("agent",this);
@@ -165,7 +167,7 @@ module tb_uvm_test;
         `uvm_new_func
         sample_env env;
         virtual function void build_phase(uvm_phase phase);
-           env=sample_env::type_id::create("env",this);
+            env=sample_env::type_id::create("env",this);
             super.build_phase(phase);
         endfunction
 

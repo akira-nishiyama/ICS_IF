@@ -1,52 +1,15 @@
 cmake_minimum_required(VERSION 3.1)
+enable_testing()
 
-find_program(   VIVADO_COMMAND
-                NAME vivado
-                HINTS ENV var
+find_package(   vivado_cmake_helper
+                HINTS $ENV{VIVADO_CMAKE_HELPER}
                 REQUIRED)
-
-find_file(  HELPER_SCRIPT_IPX
-            NAME create_ip.tcl
-            HINTS $ENV{VIVADO_CMAKE_HELPER})
-
-find_file(  HELPER_SCRIPT_PRJ_GEN
-            NAME project_generation.tcl
-            HINTS $ENV{VIVADO_CMAKE_HELPER})
-
-find_file(  HELPER_SCRIPT_IMPORT_BD
-            NAME vivado_import_bd.tcl
-            HINTS $ENV{VIVADO_CMAKE_HELPER})
-
-find_file(  HELPER_SCRIPT_EXPORT_SIM
-            NAME vivado_export_sim.tcl
-            HINTS $ENV{VIVADO_CMAKE_HELPER})
-
-find_file(  HELPER_SCRIPT_OPEN_WDB
-            NAME vivado_open_wdb.tcl
-            HINTS $ENV{VIVADO_CMAKE_HELPER})
-
-find_file(  VIVADO_IPX_EXPORT_CMAKE
-            NAME vivado_ipx_export.cmake
-            HINTS $ENV{VIVADO_CMAKE_HELPER}
-            REQUIRED)
-
-find_file(  VIVADO_ADD_SIM_CMAKE
-            NAME vivado_add_sim.cmake
-            HINTS $ENV{VIVADO_CMAKE_HELPER})
 
 #version fixed to 1.0 due to vivado 2019.2 restriction.
 project(ics_if
     VERSION 1.0
     LANGUAGES NONE)
 
-set(CP "cp")
-set(CP_OPTION "-rf")
-set(MV "mv")
-set(RM "rm")
-set(RM_OPTION "-rf")
-set(SED "sed")
-set(MKDIR "mkdir")
-set(MKDIR_OPTION "-p")
 add_subdirectory(modules)
 
 set(VENDOR "Akira_Nishiyama")
@@ -65,10 +28,15 @@ list(APPEND SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/interval_timer.v")
 string(REPLACE ";" ":" SRC_FILES "${SRC_FILES}")
 
 #testbench list
+#file(GLOB UVM_AXI_FILES ${CMAKE_CURRENT_SOURCE_DIR}/test/src*.sv)
 set(TESTBENCH_FILES "")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv")
+list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard/gp_scoreboard.sv")
+#list(APPEND TESTBENCH_FILES "${UVM_AXI_FILES}")
 string(REPLACE ";" ":" TESTBENCH_FILES "${TESTBENCH_FILES}")
+
+#message("${TESTBENCH_FILES}")
 
 #ip_repo_path list
 set(IP_REPO_PATH "")
@@ -82,26 +50,34 @@ set(SIMSET_NAME "sim_1")
 #create block design scripts
 set(BLOCK_DESIGN_TCL "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blockdesign.tcl")
 
-include(${VIVADO_IPX_EXPORT_CMAKE})
+project_generation( ${PROJECT_NAME} ${VENDOR} ${LIBRARY_NAME} ${TARGET_DEVICE} ${SRC_FILES} ${TESTBENCH_FILES} ${IP_REPO_PATH})
+project_add_bd( ${PROJECT_NAME} ${BLOCK_DESIGN_TCL} prj_gen_${PROJECT_NAME})
+export_ip( ${VENDOR} ${LIBRARY_NAME} ${TARGET_DEVICE} ${SRC_FILES} ${TESTBENCH_FILES} ${IP_REPO_PATH} )
 
-add_dependencies( ${PROJECT_NAME} ics_if_main)
-add_dependencies( ${PROJECT_NAME} ics_if_tx)
-add_dependencies( ${PROJECT_NAME} ics_if_rx)
+add_dependencies( prj_gen_${PROJECT_NAME} ics_if_main)
+add_dependencies( prj_gen_${PROJECT_NAME} ics_if_tx)
+add_dependencies( prj_gen_${PROJECT_NAME} ics_if_rx)
+add_dependencies( ${PROJECT_NAME} add_bd_${PROJECT_NAME} )
 
 #simulation
+set(DEPENDENCIES ${PROJECT_NAME})
+set(SIMULATION_DIR "${CMAKE_CURRENT_BINARY_DIR}/sim")
+file(MAKE_DIRECTORY ${SIMULATION_DIR}/work/xsim)
 add_custom_target(gen_all DEPENDS ${DEPENDENCIES})
 add_custom_target(compile_all DEPENDS gen_all)
 add_custom_target(elaborate_all DEPENDS compile_all)
 add_custom_target(sim_all DEPENDS elaborate_all)
 
-include(${VIVADO_ADD_SIM_CMAKE})
+set(INCLUDE_DIRS "")
+list(APPEND INCLUDE_DIRS "-i ${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard")
 
-set(DEPENDENCIES ${PROJECT_NAME})
-set(SIMULATION_DIR "${CMAKE_CURRENT_BINARY_DIR}/sim")
-file(MAKE_DIRECTORY ${SIMULATION_DIR}/work/xsim)
+set(ADDITIONAL_VLOG_OPTS "-L uvm -d VIVADO_SIM ${INCLUDE_DIRS}")
+set(ADDITIONAL_ELAB_OPTS "-L uvm")
+set(ADDITIONAL_XSIM_OPTS "-testplusarg UVM_TESTNAME")
 
-add_sim(tb_interval_timer ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v" "")
-add_sim(tb_uvm_test ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv" tb_interval_timer)
+add_sim(tb_interval_timer ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" "")
+add_sim(tb_uvm_test ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_interval_timer)
+#add_sim(tb_test_code ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_test_code.sv" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb)
 
 if(PRINT_VARIABLES)
     message(STATUS "*** dump start cmake variables ***")
