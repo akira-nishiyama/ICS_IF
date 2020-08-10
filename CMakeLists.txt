@@ -25,7 +25,6 @@ set(DISPLAY_IP_NAME "ICS_IF")
 #source list
 set(SRC_FILES "")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/interval_timer.v")
-string(REPLACE ";" ":" SRC_FILES "${SRC_FILES}")
 
 #testbench list
 #file(GLOB UVM_AXI_FILES ${CMAKE_CURRENT_SOURCE_DIR}/test/src*.sv)
@@ -34,14 +33,10 @@ list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_ti
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard/gp_scoreboard.sv")
 #list(APPEND TESTBENCH_FILES "${UVM_AXI_FILES}")
-string(REPLACE ";" ":" TESTBENCH_FILES "${TESTBENCH_FILES}")
-
-#message("${TESTBENCH_FILES}")
 
 #ip_repo_path list
 set(IP_REPO_PATH "")
 list(APPEND IP_REPO_PATH "${CMAKE_CURRENT_BINARY_DIR}")
-string(REPLACE ";" ":" IP_REPO_PATH "${IP_REPO_PATH}")
 
 #vivado create_project name(currently fixed to project_1)
 set(VIVADO_PRJ_NAME "project_1")
@@ -53,9 +48,9 @@ set(BLOCK_DESIGN_TCL "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blockdesign.tcl")
 #rtl package flag (0:block_design, 1:rtl module)
 set(RTL_PACKAGE_FLAG "0")
 
-project_generation( ${PROJECT_NAME} ${VENDOR} ${LIBRARY_NAME} ${TARGET_DEVICE} ${SRC_FILES} ${TESTBENCH_FILES} ${IP_REPO_PATH})
+project_generation( ${PROJECT_NAME} ${VENDOR} ${LIBRARY_NAME} ${TARGET_DEVICE} "${SRC_FILES}" "${TESTBENCH_FILES}" "${IP_REPO_PATH}")
 project_add_bd( ${PROJECT_NAME} ${BLOCK_DESIGN_TCL} prj_gen_${PROJECT_NAME})
-export_ip( ${VENDOR} ${LIBRARY_NAME} ${TARGET_DEVICE} ${SRC_FILES} ${TESTBENCH_FILES} ${IP_REPO_PATH} ${RTL_PACKAGE_FLAG})
+export_ip( ${VENDOR} ${LIBRARY_NAME} ${RTL_PACKAGE_FLAG})
 
 add_dependencies( prj_gen_${PROJECT_NAME} ics_if_main)
 add_dependencies( prj_gen_${PROJECT_NAME} ics_if_tx)
