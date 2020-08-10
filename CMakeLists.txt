@@ -50,9 +50,12 @@ set(SIMSET_NAME "sim_1")
 #create block design scripts
 set(BLOCK_DESIGN_TCL "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blockdesign.tcl")
 
+#rtl package flag (0:block_design, 1:rtl module)
+set(RTL_PACKAGE_FLAG "0")
+
 project_generation( ${PROJECT_NAME} ${VENDOR} ${LIBRARY_NAME} ${TARGET_DEVICE} ${SRC_FILES} ${TESTBENCH_FILES} ${IP_REPO_PATH})
 project_add_bd( ${PROJECT_NAME} ${BLOCK_DESIGN_TCL} prj_gen_${PROJECT_NAME})
-export_ip( ${VENDOR} ${LIBRARY_NAME} ${TARGET_DEVICE} ${SRC_FILES} ${TESTBENCH_FILES} ${IP_REPO_PATH} )
+export_ip( ${VENDOR} ${LIBRARY_NAME} ${TARGET_DEVICE} ${SRC_FILES} ${TESTBENCH_FILES} ${IP_REPO_PATH} ${RTL_PACKAGE_FLAG})
 
 add_dependencies( prj_gen_${PROJECT_NAME} ics_if_main)
 add_dependencies( prj_gen_${PROJECT_NAME} ics_if_tx)
