@@ -1,6 +1,6 @@
 
 ################################################################
-# This is a generated script based on design: design_1
+# This is a generated script based on design: ics_if
 #
 # Though there are limitations about the generated script,
 # the main purpose of this utility is to make learning
@@ -35,7 +35,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 ################################################################
 
 # To test this script, run the following commands from Vivado Tcl console:
-# source design_1_script.tcl
+# source ics_if_script.tcl
 
 
 # The design that will be created by this Tcl script contains the following 
@@ -51,7 +51,6 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
    create_project project_1 myproj -part xczu3eg-sbva484-1-e
-   set_property BOARD_PART em.avnet.com:ultra96v2:part0:1.0 [current_project]
 }
 
 
@@ -409,7 +408,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net util_vector_logic_0_Res [get_bd_pins util_vector_logic_0/Res] [get_bd_pins util_vector_logic_1/Op1]
   connect_bd_net -net util_vector_logic_1_Res [get_bd_pins ics_if_rx_0/ap_rst_n] [get_bd_pins util_vector_logic_1/Res]
   connect_bd_net -net util_vector_logic_2_Res [get_bd_pins fifo_generator_0/srst] [get_bd_pins util_vector_logic_2/Res]
-  connect_bd_net -net xlconstant_0_dout [get_bd_pins ics_if_main_0/ap_start] [get_bd_pins ics_if_rx_0/ap_start] [get_bd_pins ics_if_rx_0/ics_sig_i_V_V_ap_vld] [get_bd_pins ics_if_tx_0/ap_start] [get_bd_pins xlconstant_0/dout]
+  connect_bd_net -net xlconstant_0_dout [get_bd_pins ics_if_rx_0/ap_start] [get_bd_pins ics_if_rx_0/ics_sig_i_V_V_ap_vld] [get_bd_pins ics_if_tx_0/ap_start] [get_bd_pins xlconstant_0/dout]
 
   # Create address segments
   assign_bd_address -offset 0x00001000 -range 0x00001000 -target_address_space [get_bd_addr_spaces S_AXI_0] [get_bd_addr_segs axi_bram_ctrl_0/S_AXI/Mem0] -force

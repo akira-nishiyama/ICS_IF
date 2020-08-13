@@ -46,6 +46,7 @@ void ics_if_main(
 	hls::stream<uint1_t> &cyclic2_start_i
 	)
 {
+#pragma HLS INTERFACE s_axilite port=return bundle=slv0
 #pragma HLS INTERFACE ap_fifo port=cyclic2_start_i
 #pragma HLS INTERFACE ap_fifo port=cyclic1_start_i
 #pragma HLS INTERFACE ap_fifo port=cyclic0_start_i
