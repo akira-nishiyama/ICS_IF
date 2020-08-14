@@ -29,6 +29,7 @@ set(DISPLAY_IP_NAME "ICS_IF")
 #source list
 set(SRC_FILES "")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/interval_timer.v")
+list(APPEND SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dff_with_we.v")
 
 #testbench list
 #file(GLOB UVM_AXI_FILES ${CMAKE_CURRENT_SOURCE_DIR}/test/src*.sv)
@@ -87,7 +88,7 @@ set(ADDITIONAL_XSIM_OPTS "-testplusarg UVM_TESTNAME")
 
 add_sim(tb_interval_timer ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" "")
 add_sim(tb_uvm_test ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_interval_timer)
-add_sim(tb_ics_if_uvm ${SIMULATION_DIR} "${DEPENDENCIES};${simple_axi_uvm_DEPENDENCIES};${TB_ICS_IF_DEPENDENCIES}" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_uvm_test)
+add_sim(tb_ics_if_uvm ${SIMULATION_DIR} "${DEPENDENCIES};${simple_axi_uvm_DEPENDENCIES};${TB_ICS_IF_DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard/gp_scoreboard.sv" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_uvm_test)
 
 if(PRINT_VARIABLES)
     message(STATUS "*** dump start cmake variables ***")

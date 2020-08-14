@@ -16,12 +16,16 @@ class ics_if_basic_tx_test extends uvm_test;
     endfunction
 
     task run_phase(uvm_phase phase);
-        //issue_one_trans_seq seq = issue_one_trans_seq::type_id::create("seq");
-        issue_read_write_trans_seq seq = issue_read_write_trans_seq::type_id::create("seq");
+        init_all_register_seq               seq  = init_all_register_seq::type_id::create("seq2");
+        all_initialized_register_read_seq   seq2 = all_initialized_register_read_seq::type_id::create("seq2");
+        init_bram_seq                       seq3 = init_bram_seq::type_id::create("seq3");
         uvm_report_info("TEST", "simple_axi_uvm_test_example running");
         phase.raise_objection(this);
         seq.start(env.agent.sequencer);
-        env.agent.driver.wait_trans_done();
+        seq2.start(env.agent.sequencer);
+        seq3.start(env.agent_mem.sequencer);
+        env.agent_mem.driver.wait_trans_done();
+        #20000000;
         phase.drop_objection(this);
     endtask
 endclass

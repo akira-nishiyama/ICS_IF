@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# interval_timer
+# dff_with_we, dff_with_we, interval_timer
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -136,6 +136,7 @@ xilinx.com:ip:fifo_generator:13.2\
 Akira_Nishiyama:hls:ics_if_main:0.1\
 Akira_Nishiyama:hls:ics_if_rx:0.1\
 Akira_Nishiyama:hls:ics_if_tx:0.1\
+xilinx.com:ip:util_ds_buf:2.1\
 xilinx.com:ip:util_vector_logic:2.0\
 xilinx.com:ip:xlconstant:1.1\
 "
@@ -163,6 +164,8 @@ xilinx.com:ip:xlconstant:1.1\
 set bCheckModules 1
 if { $bCheckModules == 1 } {
    set list_check_mods "\ 
+dff_with_we\
+dff_with_we\
 interval_timer\
 "
 
@@ -226,7 +229,7 @@ proc create_root_design { parentCell } {
 
 
   # Create interface ports
-  set S_AXI_0 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_0 ]
+  set S_AXI_for_bram [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_for_bram ]
   set_property -dict [ list \
    CONFIG.ADDR_WIDTH {15} \
    CONFIG.ARUSER_WIDTH {0} \
@@ -255,9 +258,9 @@ proc create_root_design { parentCell } {
    CONFIG.SUPPORTS_NARROW_BURST {1} \
    CONFIG.WUSER_BITS_PER_BYTE {0} \
    CONFIG.WUSER_WIDTH {0} \
-   ] $S_AXI_0
+   ] $S_AXI_for_bram
 
-  set s_axi_slv0_0 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 s_axi_slv0_0 ]
+  set s_axi_for_reg [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 s_axi_for_reg ]
   set_property -dict [ list \
    CONFIG.ADDR_WIDTH {16} \
    CONFIG.ARUSER_WIDTH {0} \
@@ -286,15 +289,16 @@ proc create_root_design { parentCell } {
    CONFIG.SUPPORTS_NARROW_BURST {0} \
    CONFIG.WUSER_BITS_PER_BYTE {0} \
    CONFIG.WUSER_WIDTH {0} \
-   ] $s_axi_slv0_0
+   ] $s_axi_for_reg
 
 
   # Create ports
   set ap_clk_0 [ create_bd_port -dir I -type clk ap_clk_0 ]
+  set_property -dict [ list \
+   CONFIG.ASSOCIATED_BUSIF {S_AXI_for_bram:s_axi_for_reg} \
+ ] $ap_clk_0
   set ap_rst_n_0 [ create_bd_port -dir I -type rst ap_rst_n_0 ]
-  set ics_sig_dir_o_V_V_din_0 [ create_bd_port -dir O -from 0 -to 0 ics_sig_dir_o_V_V_din_0 ]
-  set ics_sig_i_V_V_0 [ create_bd_port -dir I -from 0 -to 0 -type data ics_sig_i_V_V_0 ]
-  set ics_sig_o_V_V_din_0 [ create_bd_port -dir O -from 0 -to 0 ics_sig_o_V_V_din_0 ]
+  set ics_sig [ create_bd_port -dir IO -from 0 -to 0 ics_sig ]
 
   # Create instance: axi_bram_ctrl_0, and set properties
   set axi_bram_ctrl_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 axi_bram_ctrl_0 ]
@@ -321,20 +325,46 @@ proc create_root_design { parentCell } {
    CONFIG.use_bram_block {BRAM_Controller} \
  ] $blk_mem_gen_0
 
+  # Create instance: dff_with_we_0, and set properties
+  set block_name dff_with_we
+  set block_cell_name dff_with_we_0
+  if { [catch {set dff_with_we_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $dff_with_we_0 eq "" } {
+     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
+  # Create instance: dff_with_we_1, and set properties
+  set block_name dff_with_we
+  set block_cell_name dff_with_we_1
+  if { [catch {set dff_with_we_1 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $dff_with_we_1 eq "" } {
+     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
   # Create instance: fifo_generator_0, and set properties
   set fifo_generator_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fifo_generator:13.2 fifo_generator_0 ]
   set_property -dict [ list \
-   CONFIG.Data_Count_Width {4} \
-   CONFIG.Fifo_Implementation {Common_Clock_Shift_Register} \
-   CONFIG.Full_Threshold_Assert_Value {14} \
-   CONFIG.Full_Threshold_Negate_Value {13} \
+   CONFIG.Data_Count_Width {5} \
+   CONFIG.Empty_Threshold_Assert_Value {4} \
+   CONFIG.Empty_Threshold_Negate_Value {5} \
+   CONFIG.Fifo_Implementation {Common_Clock_Distributed_RAM} \
+   CONFIG.Full_Threshold_Assert_Value {15} \
+   CONFIG.Full_Threshold_Negate_Value {14} \
    CONFIG.Input_Data_Width {1} \
    CONFIG.Input_Depth {16} \
    CONFIG.Output_Data_Width {1} \
    CONFIG.Output_Depth {16} \
-   CONFIG.Read_Data_Count_Width {4} \
+   CONFIG.Performance_Options {First_Word_Fall_Through} \
+   CONFIG.Read_Data_Count_Width {5} \
    CONFIG.Use_Embedded_Registers {false} \
-   CONFIG.Write_Data_Count_Width {4} \
+   CONFIG.Use_Extra_Logic {true} \
+   CONFIG.Write_Data_Count_Width {5} \
  ] $fifo_generator_0
 
   # Create instance: ics_if_main_0, and set properties
@@ -357,6 +387,12 @@ proc create_root_design { parentCell } {
      return 1
    }
   
+  # Create instance: util_ds_buf_0, and set properties
+  set util_ds_buf_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_0 ]
+  set_property -dict [ list \
+   CONFIG.C_BUF_TYPE {IOBUF} \
+ ] $util_ds_buf_0
+
   # Create instance: util_vector_logic_0, and set properties
   set util_vector_logic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_vector_logic:2.0 util_vector_logic_0 ]
   set_property -dict [ list \
@@ -380,39 +416,53 @@ proc create_root_design { parentCell } {
    CONFIG.LOGO_FILE {data/sym_notgate.png} \
  ] $util_vector_logic_2
 
+  # Create instance: util_vector_logic_3, and set properties
+  set util_vector_logic_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_vector_logic:2.0 util_vector_logic_3 ]
+  set_property -dict [ list \
+   CONFIG.C_OPERATION {not} \
+   CONFIG.C_SIZE {1} \
+   CONFIG.LOGO_FILE {data/sym_notgate.png} \
+ ] $util_vector_logic_3
+
   # Create instance: xlconstant_0, and set properties
   set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
 
   # Create interface connections
-  connect_bd_intf_net -intf_net S_AXI_0_1 [get_bd_intf_ports S_AXI_0] [get_bd_intf_pins axi_bram_ctrl_0/S_AXI]
+  connect_bd_intf_net -intf_net S_AXI_0_1 [get_bd_intf_ports S_AXI_for_bram] [get_bd_intf_pins axi_bram_ctrl_0/S_AXI]
   connect_bd_intf_net -intf_net axi_bram_ctrl_0_BRAM_PORTA [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA] [get_bd_intf_pins blk_mem_gen_0/BRAM_PORTB]
   connect_bd_intf_net -intf_net ics_if_main_0_communication_memory_V_PORTA [get_bd_intf_pins blk_mem_gen_0/BRAM_PORTA] [get_bd_intf_pins ics_if_main_0/communication_memory_V_PORTA]
   connect_bd_intf_net -intf_net ics_if_main_0_ics_tx_char_o_V_V [get_bd_intf_pins ics_if_main_0/ics_tx_char_o_V_V] [get_bd_intf_pins ics_if_tx_0/ics_char_i_V_V]
   connect_bd_intf_net -intf_net ics_if_rx_0_ics_char_o_V [get_bd_intf_pins ics_if_main_0/ics_rx_char_i_V] [get_bd_intf_pins ics_if_rx_0/ics_char_o_V]
-  connect_bd_intf_net -intf_net s_axi_slv0_0_1 [get_bd_intf_ports s_axi_slv0_0] [get_bd_intf_pins ics_if_main_0/s_axi_slv0]
+  connect_bd_intf_net -intf_net s_axi_slv0_0_1 [get_bd_intf_ports s_axi_for_reg] [get_bd_intf_pins ics_if_main_0/s_axi_slv0]
 
   # Create port connections
-  connect_bd_net -net ap_clk_0_1 [get_bd_ports ap_clk_0] [get_bd_pins axi_bram_ctrl_0/s_axi_aclk] [get_bd_pins fifo_generator_0/clk] [get_bd_pins ics_if_main_0/ap_clk] [get_bd_pins ics_if_rx_0/ap_clk] [get_bd_pins ics_if_tx_0/ap_clk] [get_bd_pins interval_timer_0/ap_clk]
+  connect_bd_net -net Net [get_bd_ports ics_sig] [get_bd_pins util_ds_buf_0/IOBUF_IO_IO]
+  connect_bd_net -net ap_clk_0_1 [get_bd_ports ap_clk_0] [get_bd_pins axi_bram_ctrl_0/s_axi_aclk] [get_bd_pins dff_with_we_0/clk] [get_bd_pins dff_with_we_1/clk] [get_bd_pins fifo_generator_0/clk] [get_bd_pins ics_if_main_0/ap_clk] [get_bd_pins ics_if_rx_0/ap_clk] [get_bd_pins ics_if_tx_0/ap_clk] [get_bd_pins interval_timer_0/ap_clk]
   connect_bd_net -net ap_rst_n_0_1 [get_bd_ports ap_rst_n_0] [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn] [get_bd_pins ics_if_main_0/ap_rst_n] [get_bd_pins ics_if_tx_0/ap_rst_n] [get_bd_pins interval_timer_0/ap_rst_n] [get_bd_pins util_vector_logic_1/Op2] [get_bd_pins util_vector_logic_2/Op1]
+  connect_bd_net -net dff_with_we_0_q [get_bd_pins dff_with_we_0/q] [get_bd_pins util_ds_buf_0/IOBUF_IO_I]
+  connect_bd_net -net dff_with_we_1_q [get_bd_pins dff_with_we_1/q] [get_bd_pins util_ds_buf_0/IOBUF_IO_T]
   connect_bd_net -net fifo_generator_0_dout [get_bd_pins fifo_generator_0/dout] [get_bd_pins ics_if_main_0/cyclic0_start_i_V_V_dout]
-  connect_bd_net -net fifo_generator_0_empty [get_bd_pins fifo_generator_0/empty] [get_bd_pins ics_if_main_0/cyclic0_start_i_V_V_empty_n]
+  connect_bd_net -net fifo_generator_0_empty [get_bd_pins fifo_generator_0/empty] [get_bd_pins util_vector_logic_3/Op1]
   connect_bd_net -net ics_if_main_0_bit_period_o_V [get_bd_pins ics_if_main_0/bit_period_o_V] [get_bd_pins ics_if_rx_0/bit_period_i_V] [get_bd_pins ics_if_tx_0/bit_period_i_V]
   connect_bd_net -net ics_if_main_0_cyclic0_enable_o_V [get_bd_pins ics_if_main_0/cyclic0_enable_o_V] [get_bd_pins interval_timer_0/interrupt_en]
   connect_bd_net -net ics_if_main_0_cyclic0_interval_o_V [get_bd_pins ics_if_main_0/cyclic0_interval_o_V] [get_bd_pins interval_timer_0/interval_i]
   connect_bd_net -net ics_if_main_0_cyclic0_start_i_V_V_read [get_bd_pins fifo_generator_0/rd_en] [get_bd_pins ics_if_main_0/cyclic0_start_i_V_V_read]
   connect_bd_net -net ics_if_main_0_ics_rx_char_rst_o_V [get_bd_pins ics_if_main_0/ics_rx_char_rst_o_V] [get_bd_pins util_vector_logic_0/Op1]
-  connect_bd_net -net ics_if_tx_0_ics_sig_dir_o_V_V_din [get_bd_ports ics_sig_dir_o_V_V_din_0] [get_bd_pins ics_if_tx_0/ics_sig_dir_o_V_V_din]
-  connect_bd_net -net ics_if_tx_0_ics_sig_o_V_V_din [get_bd_ports ics_sig_o_V_V_din_0] [get_bd_pins ics_if_tx_0/ics_sig_o_V_V_din]
-  connect_bd_net -net ics_sig_i_V_V_0_1 [get_bd_ports ics_sig_i_V_V_0] [get_bd_pins ics_if_rx_0/ics_sig_i_V_V]
+  connect_bd_net -net ics_if_tx_0_ics_sig_dir_o_V_V_din [get_bd_pins dff_with_we_1/d] [get_bd_pins ics_if_tx_0/ics_sig_dir_o_V_V_din]
+  connect_bd_net -net ics_if_tx_0_ics_sig_dir_o_V_V_write [get_bd_pins dff_with_we_1/we] [get_bd_pins ics_if_tx_0/ics_sig_dir_o_V_V_write]
+  connect_bd_net -net ics_if_tx_0_ics_sig_o_V_V_din [get_bd_pins dff_with_we_0/d] [get_bd_pins ics_if_tx_0/ics_sig_o_V_V_din]
+  connect_bd_net -net ics_if_tx_0_ics_sig_o_V_V_write [get_bd_pins dff_with_we_0/we] [get_bd_pins ics_if_tx_0/ics_sig_o_V_V_write]
   connect_bd_net -net loadable_counter_0_interrupt_o [get_bd_pins fifo_generator_0/din] [get_bd_pins fifo_generator_0/wr_en] [get_bd_pins interval_timer_0/interrupt_o]
+  connect_bd_net -net util_ds_buf_0_IOBUF_IO_O [get_bd_pins ics_if_rx_0/ics_sig_i_V_V] [get_bd_pins util_ds_buf_0/IOBUF_IO_O]
   connect_bd_net -net util_vector_logic_0_Res [get_bd_pins util_vector_logic_0/Res] [get_bd_pins util_vector_logic_1/Op1]
   connect_bd_net -net util_vector_logic_1_Res [get_bd_pins ics_if_rx_0/ap_rst_n] [get_bd_pins util_vector_logic_1/Res]
-  connect_bd_net -net util_vector_logic_2_Res [get_bd_pins fifo_generator_0/srst] [get_bd_pins util_vector_logic_2/Res]
-  connect_bd_net -net xlconstant_0_dout [get_bd_pins ics_if_rx_0/ap_start] [get_bd_pins ics_if_rx_0/ics_sig_i_V_V_ap_vld] [get_bd_pins ics_if_tx_0/ap_start] [get_bd_pins xlconstant_0/dout]
+  connect_bd_net -net util_vector_logic_2_Res [get_bd_pins dff_with_we_0/rst] [get_bd_pins dff_with_we_1/rst] [get_bd_pins fifo_generator_0/srst] [get_bd_pins util_vector_logic_2/Res]
+  connect_bd_net -net util_vector_logic_3_Res [get_bd_pins ics_if_main_0/cyclic0_start_i_V_V_empty_n] [get_bd_pins util_vector_logic_3/Res]
+  connect_bd_net -net xlconstant_0_dout [get_bd_pins ics_if_rx_0/ap_start] [get_bd_pins ics_if_rx_0/ics_sig_i_V_V_ap_vld] [get_bd_pins ics_if_tx_0/ap_start] [get_bd_pins ics_if_tx_0/ics_sig_dir_o_V_V_full_n] [get_bd_pins ics_if_tx_0/ics_sig_o_V_V_full_n] [get_bd_pins xlconstant_0/dout]
 
   # Create address segments
-  assign_bd_address -offset 0x00001000 -range 0x00001000 -target_address_space [get_bd_addr_spaces S_AXI_0] [get_bd_addr_segs axi_bram_ctrl_0/S_AXI/Mem0] -force
-  assign_bd_address -offset 0x00000000 -range 0x00000800 -target_address_space [get_bd_addr_spaces s_axi_slv0_0] [get_bd_addr_segs ics_if_main_0/s_axi_slv0/Reg] -force
+  assign_bd_address -offset 0x00001000 -range 0x00001000 -target_address_space [get_bd_addr_spaces S_AXI_for_bram] [get_bd_addr_segs axi_bram_ctrl_0/S_AXI/Mem0] -force
+  assign_bd_address -offset 0x00000000 -range 0x00000800 -target_address_space [get_bd_addr_spaces s_axi_for_reg] [get_bd_addr_segs ics_if_main_0/s_axi_slv0/Reg] -force
 
 
   # Restore current instance
