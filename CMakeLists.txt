@@ -39,7 +39,7 @@ list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_uvm.sv")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_uvm_test_pkg.sv")
 #list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard/gp_scoreboard.sv")
-list(APPEND TESTBENCH_FILES "${uvm_gp_scoreboard_SIM_FILES})
+list(APPEND TESTBENCH_FILES "${uvm_gp_scoreboard_SIM_FILES}")
 list(APPEND TESTBENCH_FILES "${simple_axi_uvm_SIM_FILES}")
 #list(APPEND TESTBENCH_FILES "${UVM_AXI_FILES}")
 
