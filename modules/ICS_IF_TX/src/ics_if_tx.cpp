@@ -43,7 +43,7 @@ tx_loop_character:
 tx_bit_period_loop:
 		for(ap_uint<10> j = 0; j < bit_period_i; ++j){
 			#pragma HLS LOOP_FLATTEN off
-			ics_sig_dir_o.write_nb(1);
+			ics_sig_dir_o.write_nb(0);
 			ics_sig_o.write_nb((ch >> (9 - i)) & 0x01);
 		}
 	}

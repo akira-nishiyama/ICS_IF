@@ -46,6 +46,7 @@ void ics_if_main(
 	hls::stream<uint1_t> &cyclic2_start_i
 	)
 {
+#pragma HLS INTERFACE s_axilite port=return bundle=slv0
 #pragma HLS INTERFACE ap_fifo port=cyclic2_start_i
 #pragma HLS INTERFACE ap_fifo port=cyclic1_start_i
 #pragma HLS INTERFACE ap_fifo port=cyclic0_start_i
@@ -124,7 +125,7 @@ void ics_if_main(
 				//tx
 				id = communication_memory[i] & 0x1f;
 				for(ap_uint<2> j = 0; j < 3; ++j) {
-					ap_uint<9> ch = (communication_memory[i] >> (8 * (2 - j))) & 0xff;
+					ap_uint<9> ch = (communication_memory[i] >> (8 * j)) & 0xff;
 					if(j == 2) ch = ch | 0x100;
 					ics_tx_char_o.write(ch);
 				}
