@@ -5,10 +5,6 @@ find_package(   vivado_cmake_helper
                 HINTS $ENV{VIVADO_CMAKE_HELPER}
                 REQUIRED)
 
-find_package(   simple_axi_uvm
-                HINTS test/lib/simple_axi_uvm
-                REQUIRED)
-
 #version fixed to 1.0 due to vivado 2019.2 restriction.
 project(ics_if
     VERSION 1.0
@@ -26,6 +22,16 @@ set(DESCRIPTION "ICS_IF IP")
 
 set(DISPLAY_IP_NAME "ICS_IF")
 
+require(simple_axi_uvm
+        GIT_REPOSITORY https://github.com/akira-nishiyama/simple_axi_uvm.git
+        )
+require(simple_ics_uvm
+        GIT_REPOSITORY https://github.com/akira-nishiyama/simple_ics_uvm.git
+       )
+require(gp_scoreboard
+        GIT_REPOSITORY https://github.com/akira-nishiyama/uvm_component.git
+       )
+
 #source list
 set(SRC_FILES "")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/interval_timer.v")
@@ -39,7 +45,7 @@ list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_uvm.sv")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_uvm_test_pkg.sv")
 #list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard/gp_scoreboard.sv")
-list(APPEND TESTBENCH_FILES "${uvm_gp_scoreboard_SIM_FILES}")
+list(APPEND TESTBENCH_FILES "${gp_scoreboard_SIM_FILES}")
 list(APPEND TESTBENCH_FILES "${simple_axi_uvm_SIM_FILES}")
 #list(APPEND TESTBENCH_FILES "${UVM_AXI_FILES}")
 
@@ -76,9 +82,9 @@ add_custom_target(elaborate_all DEPENDS compile_all)
 add_custom_target(sim_all DEPENDS elaborate_all)
 
 set(INCLUDE_DIRS_VER "")
-list(APPEND INCLUDE_DIRS_VER "-i ${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard")
+#list(APPEND INCLUDE_DIRS_VER "-i ${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard")
 list(APPEND INCLUDE_DIRS_VER "-i ${CMAKE_CURRENT_SOURCE_DIR}/test/include")
-list(APPEND INCLUDE_DIRS_VER "${simple_axi_uvm_DEFINITIONS_VLOG}")
+list(APPEND INCLUDE_DIRS_VER "${simple_axi_uvm_DEFINITIONS_VLOG} ${simple_ics_uvm_DEFINITIONS_VLOG} ${gp_scoreboard_DEFINITIONS_VLOG}")
 
 #simulation dependencies
 file(GLOB TB_ICS_IF_DEPENDENCIES test/include/*.svh test/src/tb_ics_if_uvm*.sv)
@@ -89,7 +95,7 @@ set(ADDITIONAL_XSIM_OPTS "-testplusarg UVM_TESTNAME")
 
 add_sim(tb_interval_timer ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" "")
 add_sim(tb_uvm_test ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_interval_timer)
-add_sim(tb_ics_if_uvm ${SIMULATION_DIR} "${DEPENDENCIES};${simple_axi_uvm_DEPENDENCIES};${TB_ICS_IF_DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard/gp_scoreboard.sv" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_uvm_test)
+add_sim(tb_ics_if_uvm ${SIMULATION_DIR} "${DEPENDENCIES};${TB_ICS_IF_DEPENDENCIES}" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_uvm_test)
 
 if(PRINT_VARIABLES)
     message(STATUS "*** dump start cmake variables ***")
