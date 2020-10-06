@@ -17,25 +17,20 @@ set(CLOCK_PERIOD "10")
 #CFLAGS
 set(CFLAGS "")
 list(APPEND CFLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}/include")
-string(REPLACE ";" ":" CFLAGS "${CFLAGS}")
 set(CFLAGS_TB "${CFLAGS}")
 
 #description
 set(DESCRIPTION "deserializer of ICS_IF IP")
-string(REPLACE " " ":" DESCRIPTION "${DESCRIPTION}")
-
 set(DISPLAY_IP_NAME "ICS_IF_RX")
 
 #source list
 set(SRC_FILES "")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/ics_if_rx.cpp")
 list(APPEND SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/empty.cpp")
-string(REPLACE ";" ":" SRC_FILES "${SRC_FILES}")
 
 #testbench list
 set(TESTBENCH_FILES "")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_rx.cpp")
-string(REPLACE ";" ":" TESTBENCH_FILES "${TESTBENCH_FILES}")
 
 #directives.tcl path
 set(DIRECTIVES ${CMAKE_CURRENT_SOURCE_DIR}/directives.tcl)
