@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 // tb_ics_if_uvm.sv
 //      This file implements the testbench for ics_if.
 //
@@ -14,6 +16,7 @@ module tb_ics_if_uvm;
 
     //signal declaration
     logic clk, rstz;
+    wire ics_sig;
 
     //axi4-lite interface
     simple_axi_if sif(
@@ -26,6 +29,9 @@ module tb_ics_if_uvm;
         .aclk(clk),
         .arstn(rstz)
     );
+
+    //uart interface
+    simple_uart_if uart_if();
 
     ics_if dut(.ap_clk_0(clk), .ap_rst_n_0(rstz),
         //axi4-lite interface
@@ -77,14 +83,16 @@ module tb_ics_if_uvm;
         .S_AXI_for_bram_wlast(mem_if.axi_wlast),
         .S_AXI_for_bram_wready(mem_if.axi_wready),
         .S_AXI_for_bram_wstrb(mem_if.axi_wstrb),
-        .S_AXI_for_bram_wvalid(mem_if.axi_wstrb));
+        .S_AXI_for_bram_wvalid(mem_if.axi_wstrb),
+        //ics signal
+        .ics_sig(ics_sig));
 
     initial begin
         fork
             begin
                 clk = 1'b1;
                 #100;
-                forever #10 clk = ~clk;
+                forever #5 clk = ~clk;
             end
             begin
                 rstz = 1'b0;
@@ -95,12 +103,18 @@ module tb_ics_if_uvm;
     end
     assign sif.axi_rlast = 1;
 
+    pullup(ics_sig);
+    assign ics_sig = (uart_if.piso === 0) ? 1'b0 : 1'bz;
+    //assign ics_sig = (ics_sig === 1'b1 ) ? uart_if.piso : ics_sig;
+    assign uart_if.posi = ics_sig;
+
     initial begin
         set_global_timeout(30000000ns);
         `uvm_info("info", "Hello World from initial block", UVM_LOW)
         uvm_config_db#(virtual simple_axi_if)::set(uvm_root::get(), "uvm_test_top.tb_ics_if_uvm_env.agent.*", "vif", sif);
         uvm_config_db#(virtual simple_axi_if)::set(uvm_root::get(), "uvm_test_top.tb_ics_if_uvm_env.agent_mem.*", "vif", mem_if);
         uvm_config_db#(bit)::set(uvm_root::get(), "*", "axi_transaction_mode", 0);
+        uvm_config_db#(virtual simple_uart_if)::set(uvm_root::get(),"uvm_test_top.tb_ics_if_uvm_env.ics_env.*", "vif",uart_if);
         run_test("ics_if_basic_tx_test");
     end
 

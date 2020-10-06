@@ -346,7 +346,10 @@ proc create_root_design { parentCell } {
      catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
-  
+    set_property -dict [ list \
+   CONFIG.init_val {"1"} \
+ ] $dff_with_we_1
+
   # Create instance: fifo_generator_0, and set properties
   set fifo_generator_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fifo_generator:13.2 fifo_generator_0 ]
   set_property -dict [ list \
@@ -424,6 +427,14 @@ proc create_root_design { parentCell } {
    CONFIG.LOGO_FILE {data/sym_notgate.png} \
  ] $util_vector_logic_3
 
+  # Create instance: util_vector_logic_4, and set properties
+  set util_vector_logic_4 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_vector_logic:2.0 util_vector_logic_4 ]
+  set_property -dict [ list \
+   CONFIG.C_OPERATION {not} \
+   CONFIG.C_SIZE {1} \
+   CONFIG.LOGO_FILE {data/sym_notgate.png} \
+ ] $util_vector_logic_4
+
   # Create instance: xlconstant_0, and set properties
   set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
 
@@ -431,7 +442,7 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net S_AXI_0_1 [get_bd_intf_ports S_AXI_for_bram] [get_bd_intf_pins axi_bram_ctrl_0/S_AXI]
   connect_bd_intf_net -intf_net axi_bram_ctrl_0_BRAM_PORTA [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA] [get_bd_intf_pins blk_mem_gen_0/BRAM_PORTB]
   connect_bd_intf_net -intf_net ics_if_main_0_communication_memory_V_PORTA [get_bd_intf_pins blk_mem_gen_0/BRAM_PORTA] [get_bd_intf_pins ics_if_main_0/communication_memory_V_PORTA]
-  connect_bd_intf_net -intf_net ics_if_main_0_ics_tx_char_o_V_V [get_bd_intf_pins ics_if_main_0/ics_tx_char_o_V_V] [get_bd_intf_pins ics_if_tx_0/ics_char_i_V_V]
+  connect_bd_intf_net -intf_net ics_if_main_0_ics_tx_char_o_V_V [get_bd_intf_pins ics_if_main_0/ics_tx_char_o_V] [get_bd_intf_pins ics_if_tx_0/ics_char_i_V]
   connect_bd_intf_net -intf_net ics_if_rx_0_ics_char_o_V [get_bd_intf_pins ics_if_main_0/ics_rx_char_i_V] [get_bd_intf_pins ics_if_rx_0/ics_char_o_V]
   connect_bd_intf_net -intf_net s_axi_slv0_0_1 [get_bd_intf_ports s_axi_for_reg] [get_bd_intf_pins ics_if_main_0/s_axi_slv0]
 
@@ -448,7 +459,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net ics_if_main_0_cyclic0_interval_o_V [get_bd_pins ics_if_main_0/cyclic0_interval_o_V] [get_bd_pins interval_timer_0/interval_i]
   connect_bd_net -net ics_if_main_0_cyclic0_start_i_V_V_read [get_bd_pins fifo_generator_0/rd_en] [get_bd_pins ics_if_main_0/cyclic0_start_i_V_V_read]
   connect_bd_net -net ics_if_main_0_ics_rx_char_rst_o_V [get_bd_pins ics_if_main_0/ics_rx_char_rst_o_V] [get_bd_pins util_vector_logic_0/Op1]
-  connect_bd_net -net ics_if_tx_0_ics_sig_dir_o_V_V_din [get_bd_pins dff_with_we_1/d] [get_bd_pins ics_if_tx_0/ics_sig_dir_o_V_V_din]
+  connect_bd_net -net ics_if_tx_0_ics_sig_dir_o_V_V_din [get_bd_pins ics_if_tx_0/ics_sig_dir_o_V_V_din] [get_bd_pins util_vector_logic_4/Op1]
   connect_bd_net -net ics_if_tx_0_ics_sig_dir_o_V_V_write [get_bd_pins dff_with_we_1/we] [get_bd_pins ics_if_tx_0/ics_sig_dir_o_V_V_write]
   connect_bd_net -net ics_if_tx_0_ics_sig_o_V_V_din [get_bd_pins dff_with_we_0/d] [get_bd_pins ics_if_tx_0/ics_sig_o_V_V_din]
   connect_bd_net -net ics_if_tx_0_ics_sig_o_V_V_write [get_bd_pins dff_with_we_0/we] [get_bd_pins ics_if_tx_0/ics_sig_o_V_V_write]
@@ -458,6 +469,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net util_vector_logic_1_Res [get_bd_pins ics_if_rx_0/ap_rst_n] [get_bd_pins util_vector_logic_1/Res]
   connect_bd_net -net util_vector_logic_2_Res [get_bd_pins dff_with_we_0/rst] [get_bd_pins dff_with_we_1/rst] [get_bd_pins fifo_generator_0/srst] [get_bd_pins util_vector_logic_2/Res]
   connect_bd_net -net util_vector_logic_3_Res [get_bd_pins ics_if_main_0/cyclic0_start_i_V_V_empty_n] [get_bd_pins util_vector_logic_3/Res]
+  connect_bd_net -net util_vector_logic_4_Res [get_bd_pins dff_with_we_1/d] [get_bd_pins util_vector_logic_4/Res]
   connect_bd_net -net xlconstant_0_dout [get_bd_pins ics_if_rx_0/ap_start] [get_bd_pins ics_if_rx_0/ics_sig_i_V_V_ap_vld] [get_bd_pins ics_if_tx_0/ap_start] [get_bd_pins ics_if_tx_0/ics_sig_dir_o_V_V_full_n] [get_bd_pins ics_if_tx_0/ics_sig_o_V_V_full_n] [get_bd_pins xlconstant_0/dout]
 
   # Create address segments

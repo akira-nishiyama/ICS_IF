@@ -47,6 +47,7 @@ list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_uvm_
 #list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard/gp_scoreboard.sv")
 list(APPEND TESTBENCH_FILES "${gp_scoreboard_SIM_FILES}")
 list(APPEND TESTBENCH_FILES "${simple_axi_uvm_SIM_FILES}")
+list(APPEND TESTBENCH_FILES "${simple_ics_uvm_SIM_FILES}")
 #list(APPEND TESTBENCH_FILES "${UVM_AXI_FILES}")
 
 #ip_repo_path list
