@@ -18,12 +18,12 @@
 #include <hls_stream.h>
 
 typedef ap_uint<1> uint1_t; // 1-bit user defined type
-typedef ap_uint<9> uint9_t; // 8-bit user defined type
+//typedef ap_uint<8> uint8_t; // 8-bit user defined type
 
 void ics_if_tx(
 	hls::stream<uint1_t> &ics_sig_i,
 	hls::stream<uint1_t> &ics_sig_dir_o,
-	hls::stream<uint9_t> &ics_char_o,
+	hls::stream<uint8_t> &ics_char_o,
 	ap_uint<10> bit_period_i
 );
 

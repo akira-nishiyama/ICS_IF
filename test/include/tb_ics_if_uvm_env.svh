@@ -11,11 +11,13 @@ class tb_ics_if_uvm_env extends uvm_env;
     `uvm_new_func
     simple_axi_master_agent agent;
     simple_axi_master_agent agent_mem;
+    simple_ics_slave_env ics_env;
     gp_scoreboard#(simple_axi_seq_item) axi4_lite_scrbd;
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
         agent     = simple_axi_master_agent::type_id::create("agent",this);
         agent_mem = simple_axi_master_agent::type_id::create("agent_mem",this);
+        ics_env   = simple_ics_slave_env::type_id::create("ics_env",this);
         axi4_lite_scrbd = gp_scoreboard#(simple_axi_seq_item)::type_id::create("axi4_lite_scrbd",this);
     endfunction
 

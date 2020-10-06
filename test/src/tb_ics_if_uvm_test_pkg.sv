@@ -11,6 +11,7 @@ package tb_ics_if_uvm_test_pkg;
     import uvm_pkg::*;
     `include "gp_scoreboard.sv"
     import simple_axi_uvm_pkg::*;
+    import simple_ics_uvm_pkg::*;
     `include "tb_ics_if_uvm_env.svh"
     `include "tb_ics_if_uvm_sequence.svh"
     `include "tb_ics_if_uvm_test.svh"

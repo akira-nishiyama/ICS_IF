@@ -6,7 +6,7 @@
 // https://opensource.org/licenses/mit-license.php
 //
 
-module dff_with_we(
+module dff_with_we#(parameter integer init_val = 1'b0) (
     input  wire clk,
     input  wire rst,
     input  wire d,
@@ -16,7 +16,7 @@ module dff_with_we(
 
 always @(posedge clk) begin
     if(rst === 1'b1) begin
-        q <= 1'b0;
+        q <= init_val[0];
     end else begin
         if(we === 1'b1) begin
             q <= d;
