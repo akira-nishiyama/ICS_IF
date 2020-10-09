@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
 enable_testing()
 
+set(DOC_GEN ON)
+
 find_package(   vivado_cmake_helper
                 HINTS $ENV{VIVADO_CMAKE_HELPER}
                 REQUIRED)
@@ -97,6 +99,9 @@ set(ADDITIONAL_XSIM_OPTS "-testplusarg UVM_TESTNAME")
 add_sim(tb_interval_timer ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" "")
 add_sim(tb_uvm_test ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_interval_timer)
 add_sim(tb_ics_if_uvm ${SIMULATION_DIR} "${DEPENDENCIES};${TB_ICS_IF_DEPENDENCIES}" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_uvm_test)
+
+#document generation
+add_pandoc(ics_if "${CMAKE_CURRENT_SOURCE_DIR}/docs/ics_if.md")
 
 if(PRINT_VARIABLES)
     message(STATUS "*** dump start cmake variables ***")
