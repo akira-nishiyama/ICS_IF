@@ -219,23 +219,14 @@ class IcsIfTest : public testing::Test {
     volatile ap_uint<10> dummy = 0;
     volatile ap_uint<1> ics_rx_char_rst;
 
-    // 以降の関数で中身のないものは自由に削除できます．
-    //
     
     IcsIfTest() {
-      // テスト毎に実行される set-up をここに書きます．
     }
     
     virtual ~IcsIfTest() {
-      // テスト毎に実行される，例外を投げない clean-up をここに書きます．
     }
     
-    // コンストラクタとデストラクタでは不十分な場合．
-    // 以下のメソッドを定義することができます：
-    
     virtual void SetUp() {
-    // このコードは，コンストラクタの直後（各テストの直前）
-    // に呼び出されます．
         cmd_error_cnt = 0;
         for(int i = 0; i < 512; ++i){
             communication_memory[i] = 0;
@@ -249,6 +240,9 @@ class IcsIfTest : public testing::Test {
     }
     
     virtual void TearDown() {
+        EXPECT_EQ(0,ics_tx_char.size());
+        EXPECT_EQ(0,ics_tx_char_exp.size());
+        EXPECT_EQ(0,ics_rx_char.size());
 //    std::cout << "===============c_expommunication memory====================" << std::endl;
 //        dump_memory(communication_memory);
 //    std::cout << "===============communication memory_exp====================" << std::endl;
@@ -263,7 +257,7 @@ TEST_F(IcsIfTest, Cyclic0Single) {
         ics_rx_char.write_nb(i);
         ics_rx_char.write_nb((i+2) << 1); //upper position
         ics_rx_char.write_nb(i+1); //lower position
-        communication_memory_exp[256+i] = ((i+2) << 24) + ((i+1) << 16)  + i;
+        communication_memory_exp[256+i] = ((i+2) << 24) + ((i+1) << 16) + (1 << 8)  + i;
     }
     for(int i = 0; i < 32; ++i){
         ics_tx_char_exp.write_nb(i | 0x80);
@@ -321,7 +315,6 @@ TEST_F(IcsIfTest, Cyclic0Single) {
         compare_memory_elem(communication_memory[i], communication_memory_exp[i],i);
     }
     compare_tx_character(ics_tx_char, ics_tx_char_exp,32*3);
-    EXPECT_EQ(0,ics_tx_char.size());
     EXPECT_EQ(0,cmd_error_cnt);
 }
 
@@ -375,7 +368,6 @@ TEST_F(IcsIfTest, Cyclic0ReceiveErr) {
         compare_memory_elem(communication_memory[i], communication_memory_exp[i],i);
     }
     compare_tx_character(ics_tx_char, ics_tx_char_exp,32*3);
-    EXPECT_EQ(0,ics_tx_char.size());
     EXPECT_EQ(32,cmd_error_cnt);
 }
 

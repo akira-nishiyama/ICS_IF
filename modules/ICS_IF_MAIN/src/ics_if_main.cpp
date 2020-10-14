@@ -76,7 +76,7 @@ void ics_if_main(
     ap_uint<17> rx_timeout_init;
     ap_uint<32> rx_word;
     uint8_t rx_char;
-    ap_uint<8> cyclic0_rx_count;
+    uint8_t cyclic0_rx_count;
     ap_uint<17> rx_timeout;
     ap_uint<1> cyclic0_config_enable;
     ap_uint<16> cyclic0_config_interval;
@@ -118,7 +118,7 @@ void ics_if_main(
             //get communication memory data
             *ics_rx_char_rst_o = 1;
             *ics_rx_char_rst_o = 0;
-            ap_uint<3> rx_count;
+            ap_uint<3> rx_char_count;
             ap_uint<5> id;
             for(ap_uint<6> i = 0; i < number_of_servos_i; ++i) {
                 rx_timeout = rx_timeout_init;
@@ -134,26 +134,26 @@ void ics_if_main(
                 ch = (communication_memory[i] >> 16) & 0x7f;
                 ics_tx_char_o.write(ch);
                 //rx loop
-                rx_count = 0;
+                rx_char_count = 0;
                 cyclic0_rx_count = ((communication_memory[i + RX_BUF_CYCLIC0_OFFSET] >> 8) + 1) & 0xff;
                 while(true) {
                     if(!ics_rx_char_i.empty()){
                         ics_rx_char_i.read(rx_char);
-                        if(rx_count == 0 && (((rx_char & 0xe0) != 0) || ((rx_char & 0x1f) != id))){
+                        if(rx_char_count == 0 && (((rx_char & 0xe0) != 0) || ((rx_char & 0x1f) != id))){
                             *cmd_error_cnt_o = ++cmd_error_num;
                             break;//cmd error
-                        } else if(rx_count == 0) {
+                        } else if(rx_char_count == 0) {
                             rx_word = rx_char + (cyclic0_rx_count << 8);
-                        } else if(rx_count == 1){
+                        } else if(rx_char_count == 1){
                             rx_word = rx_word | (rx_char << 23);//position upper 7bit
-                        } else if(rx_count == 2){
+                        } else if(rx_char_count == 2){
                             rx_word = rx_word | (rx_char << 16);//position lower 7bit
                             communication_memory[i + RX_BUF_CYCLIC0_OFFSET] = rx_word;
                             break;//end rx process
-                        } else if(rx_count >= 3){
+                        } else if(rx_char_count >= 3){
                             break; //error
                         }
-                        ++rx_count;
+                        ++rx_char_count;
                     }
                     --rx_timeout;
                     if(rx_timeout == 0) break;
