@@ -18,7 +18,7 @@ ICS_IF_RX <-- (uart_rx)
 
 ---
 
-# Registers
+# Registers(0x00-0x7fc)
 
 (note:SC = Self Clear, COR = Clear on Read, TOW = Toggle on Write, COH = Clear on Handshake)
 
@@ -216,6 +216,113 @@ initial:0
 
 ---
 
-## reserved(0x3c)
+## reserved(0x3c-0x7fc)
 
 ---
+# Memory(0x800-0xffc)
+
+## Cyclic0(position write) Tx(0x800-0x87c)
+These area could have 32 ics command.
+Each command is same and described below.
+The number_of_servo register specify the number of commands
+to be executed from the area top to the bottom.
+Cyclic0 Tx is start when cyclic0_config.en register set to 1.
+
+```{.wavedrom}
+{"reg" : [
+    {"bits":5, "name":"id", "attr":["rw"]},
+    {"bits":3, "name":"cmd", "attr":["rw"]},
+    {"bits":8},
+    {"bits":14, "name":"position", "attr":["rw"]},
+    {"bits":2}
+]}
+```
+initial:0
+
+**id** is a servo motor ID.
+**cmd** should be 0b100.(position command)
+**position** is the set angle of steering.
+
+
+## Cyclic1(current read) Tx(0x880-0x8fc)
+These area could have 32 ics command.
+Each command is same and described below.
+The number_of_servo register specify the number of commands
+to be executed from the area top to the bottom.
+Cyclic1 Tx is start when cyclic1_config.en register set to 1.
+
+```{.wavedrom}
+{"reg" : [
+    {"bits":5, "name":"id", "attr":["rw"]},
+    {"bits":3, "name":"cmd", "attr":["rw"]},
+    {"bits":8, "name":"subcmd", "attr":["rw"]},
+    {"bits":16}
+]}
+```
+initial:0
+
+**id** is a servo motor ID.
+**cmd** should be 0b101.(read command)
+**subcmd** should be 0x03(current)
+
+## Cyclic2(temprature read) Tx(0x900-0x97c)
+These area could have 32 ics command.
+Each command is same and described below.
+The number_of_servo register specify the number of commands
+to be executed from the area top to the bottom.
+Cyclic2 Tx is start when cyclic2_config.en register set to 1.
+
+```{.wavedrom}
+{"reg" : [
+    {"bits":5, "name":"id", "attr":["rw"]},
+    {"bits":3, "name":"cmd", "attr":["rw"]},
+    {"bits":8, "name":"subcmd", "attr":["rw"]},
+    {"bits":16}
+]}
+```
+initial:0
+
+**id** is a servo motor ID.
+**cmd** should be 0b101.(read command)
+**subcmd** should be 0x04(current)
+
+## Ondemand Tx(0x980-0x9c0)
+T.B.D
+
+## Reserved(0x9c4-0xbfc)
+
+
+## Cyclic0(position read) Rx(0xc00-0xc7c)
+These area could have 32 ics command.
+Each command is same and described below.
+
+```{.wavedrom}
+{"reg" : [
+    {"bits":5, "name":"id", "attr":["rw"]},
+    {"bits":3, "name":"cmd_r", "attr":["rw"]},
+    {"bits":8},
+    {"bits":14, "name":"position", "attr":["rw"]},
+    {"bits":2}
+]}
+```
+initial:0
+
+**id** is a servo motor ID. Should be same as Cyclic0 tx command.
+**cmd_r** should be 0b000.(position command)
+**position** is the get angle of steering.
+
+
+## Cyclic1(current read) Rx(0xc80-0xcfc)
+T.B.D
+
+
+
+## Cyclic2(temprature read) Rx(0xd00-0xd7c)
+T.B.D
+
+
+## Ondemand Rx(0xd80-0xdc0)
+T.B.D
+
+
+## Reserved(0xdc4-0xffc)
