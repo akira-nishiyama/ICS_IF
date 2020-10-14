@@ -84,15 +84,15 @@ void ics_if_main(
     ap_uint<16> cyclic1_config_interval;
     ap_uint<1> cyclic2_config_enable;
     ap_uint<16> cyclic2_config_interval;
-    static ap_uint<8> cmd_error_num;
+    static ap_uint<8> cmd_error_num = 0;
 
-    if(bit_period_config_i == 1){
+    if(bit_period_config_i == 0){
         *bit_period_o = 868;
         rx_timeout_init = 104160;//868 clock * 3 byte * 10 bit (start+ascii+stop) * 2 (tx and rx) * 2
-    }else if(bit_period_config_i == 2){
+    }else if(bit_period_config_i == 1){
         *bit_period_o = 160;
         rx_timeout_init = 19200;//160 clock * 3 byte * 10 bit (start+ascii+stop) * 2 (tx and rx) * 2
-    }else if(bit_period_config_i == 4){
+    }else if(bit_period_config_i == 2){
         *bit_period_o = 87;
         rx_timeout_init = 10440;//87 clock * 3 byte * 10 bit (start+ascii+stop) * 2 (tx and rx) * 2
     }else{
@@ -124,11 +124,15 @@ void ics_if_main(
                 rx_timeout = rx_timeout_init;
                 //tx
                 id = communication_memory[i] & 0x1f;
-                for(ap_uint<2> j = 0; j < 3; ++j) {
-                    ap_uint<8> ch = (communication_memory[i] >> (8 * j)) & 0xff;
-                    //if(j == 2) ch = ch | 0x100;
-                    ics_tx_char_o.write(ch);
-                }
+                //cmd
+                ap_uint<8> ch = communication_memory[i] & 0xff;
+                ics_tx_char_o.write(ch);
+                //pos_h
+                ch = (communication_memory[i] >> 23) & 0x7f;
+                ics_tx_char_o.write(ch);
+                //pos_l
+                ch = (communication_memory[i] >> 16) & 0x7f;
+                ics_tx_char_o.write(ch);
                 //rx loop
                 rx_count = 0;
                 cyclic0_rx_count = ((communication_memory[i + RX_BUF_CYCLIC0_OFFSET] >> 8) + 1) & 0xff;
@@ -161,6 +165,7 @@ void ics_if_main(
 //    else if(cyclic1_start_i.read_nb(cyclic1_command)){
 //
 //    }
+    *cmd_error_cnt_o = cmd_error_num;
     return;
 }
 
