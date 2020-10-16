@@ -17,6 +17,7 @@ set(CLOCK_PERIOD "10")
 #CFLAGS
 set(CFLAGS "")
 list(APPEND CFLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}/include")
+list(APPEND CFLAGS "-I${GTEST_ROOT}/include")
 set(CFLAGS_TB "${CFLAGS}")
 
 #description
@@ -34,6 +35,10 @@ list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_rx.c
 
 #directives.tcl path
 set(DIRECTIVES ${CMAKE_CURRENT_SOURCE_DIR}/directives.tcl)
+set(LDFLAGS "")
+list(APPEND LDFLAGS "-L${GTEST_ROOT}/lib")
+list(APPEND LDFLAGS "-lgtest_main")
+list(APPEND LDFLAGS "-lgtest")
 
 include(${VIVADO_HLS_EXPORT_CMAKE})
 
