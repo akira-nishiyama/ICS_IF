@@ -217,65 +217,6 @@ void print_result_direction(
     std::cout << std::endl;
 }
 
-int old_main(void){
-    ap_uint<10> bit_period = 87;
-    hls::stream<uint1_t> direction;
-    hls::stream<uint8_t> ics_char;
-    hls::stream<uint1_t> ics_sig_o;
-
-    //initialize ics_sig_i
-    //cyclic0
-    //cyclic0 servo_index0ics_char
-    ics_char.write(0x80);
-    ics_char.write(0x03);
-    ics_char.write(0x02);
-    //cyclic0 servo_index1
-    ics_char.write(0x81);
-    ics_char.write(0x06);
-    ics_char.write(0x05);
-    //cyclic0 servo_index2
-    ics_char.write(0x82);
-    ics_char.write(0x09);
-    ics_char.write(0x08);
-    //cyclic0 servo_index31
-    ics_char.write(0x9f);
-    ics_char.write(0x0c);
-    ics_char.write(0x0b);
-    //cyclic1
-    //cyclic1 servo_index0
-    ics_char.write(0xa0);
-    ics_char.write(0x03);
-    //cyclic1 servo_index1
-    ics_char.write(0xa1);
-    ics_char.write(0x03);
-    //cyclic1 servo_index2
-    ics_char.write(0xa2);
-    ics_char.write(0x03);
-    //cyclic1 servo_index31
-    ics_char.write(0xbf);
-    ics_char.write(0x03);
-    //cyclic2
-    //cyclic2 servo_index0
-    ics_char.write(0xa0);
-    ics_char.write(0x04);
-    //cyclic2 servo_index1
-    ics_char.write(0xa1);
-    ics_char.write(0x04);
-    //cyclic2 servo_index2
-    ics_char.write(0xa2);
-    ics_char.write(0x04);
-    //cyclic2 servo_index31
-    ics_char.write(0xbf);
-    ics_char.write(0x04);
-    std::cout << "===============transmit test====================" << std::endl;
-    for(int i = 0; i < 28; ++i){
-        ics_if_tx(ics_sig_o, direction,ics_char,bit_period);
-        print_result_character(ics_sig_o,bit_period);
-        print_result_direction(direction,bit_period);
-//        std::cout << "char:" << std::setw(2) << std::setfill('0') << std::hex << (int)ics_char.read() << ",dir:" << (int)direction.read() << std::endl;
-    }
-    return 0;
-}
 class IcsIfTxTest : public testing::Test {
     protected:
     ap_uint<10>          bit_period;
