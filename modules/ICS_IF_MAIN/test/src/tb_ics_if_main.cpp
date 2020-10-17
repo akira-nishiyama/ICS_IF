@@ -212,7 +212,7 @@ class IcsIfTest : public testing::Test {
     ap_uint<8> ics_char=0;
     hls::stream<uint8_t> ics_tx_char;
     hls::stream<uint8_t> ics_tx_char_exp;
-    hls::stream<uint8_t> ics_rx_char;
+    hls::stream<uint9_t> ics_rx_char;
     hls::stream<uint1_t>  cyclic0_start;
     hls::stream<uint1_t>  cyclic1_start;
     hls::stream<uint1_t>  cyclic2_start;
@@ -299,6 +299,57 @@ TEST_F(IcsIfTest, DoNothingWhenNoTrigger) {
 
     EXPECT_EQ(0,cmd_error_cnt);
 }
+
+//Could not check in cosim. due to left over hls::stream.
+/*TEST_F(IcsIfTest, DoNothingWhenServoNumEqualsToZero) {
+
+    ap_uint<32> cyclic0_config, cyclic1_config,cyclic2_config;
+    ap_uint<1> cyclic0_enable, cyclic1_enable,cyclic2_enable;
+    cyclic0_config = 0x80000032;
+    cyclic1_config = 0x80000032;
+    cyclic2_config = 0x800003e8;
+    cyclic0_start.write_nb(1);
+    ap_uint<16> cyclic0_interval, cyclic1_interval, cyclic2_interval;
+    ics_if_main(
+        0,//ap_uint<3> bit_period_config_i,
+        0,//ap_uint<6> number_of_servos_i,
+        cyclic0_config,
+        &cyclic0_interval,
+        &cyclic0_enable,
+        cyclic1_config,
+        &cyclic1_interval,
+        &cyclic1_enable,
+        cyclic2_config,
+        &cyclic2_interval,
+        &cyclic2_enable,
+        &cmd_error_cnt,//ap_uint<8> cmd_error_cnt_o,
+        communication_memory,
+        // ics_if_tx and ics_if_rx
+        &bit_period,
+        // ics_if_tx
+        ics_tx_char,//hls::stream<uint8_t> &ics_tx_char_o,
+        // ics_if_rx
+        ics_rx_char,//hls::stream<uint8_t> &ics_rx_char_i,
+        &ics_rx_char_rst,
+        //timer for cyclic 0
+        cyclic0_start,//hls::stream<uint1_t> &cyclic0_start_i,
+        //timer for cyclic 1
+        cyclic1_start,//hls::stream<uint1_t> &cyclic1_start_i,
+        //timer for cyclic 2
+        cyclic2_start//hls::stream<uint1_t> &cyclic2_start_i
+    );
+
+    EXPECT_EQ(1,cyclic0_enable);
+    EXPECT_EQ(0x32,cyclic0_interval);
+    EXPECT_EQ(1,cyclic1_enable);
+    EXPECT_EQ(0x32,cyclic1_interval);
+    EXPECT_EQ(1,cyclic2_enable);
+    EXPECT_EQ(0x3e8,cyclic2_interval);
+    EXPECT_EQ(868,bit_period);
+
+    EXPECT_EQ(0,cmd_error_cnt);
+    EXPECT_EQ(0,ics_tx_char.size());
+}*/
 
 TEST_F(IcsIfTest, Cyclic0Single) {
     for(int i = 0; i < 32; ++i){
@@ -490,7 +541,7 @@ TEST_F(IcsIfTest, Cyclic0Multi) {
     EXPECT_EQ(0,cmd_error_cnt);
 }
 
-TEST_F(IcsIfTest, Cyclic0ReceiveErr) {
+TEST_F(IcsIfTest, Cyclic0ReceiveIDErr) {
     for(int i = 0; i < 32; ++i){
         ics_rx_char.write_nb(i+1);
     }
@@ -543,6 +594,60 @@ TEST_F(IcsIfTest, Cyclic0ReceiveErr) {
     EXPECT_EQ(32,cmd_error_cnt);
 }
 
+TEST_F(IcsIfTest, Cyclic0ReceivePalityErr) {
+    //should not update communication memory if received frame has parity error.
+    for(int i = 0; i < 32; ++i){
+        if( i % 3 == 0) {ics_rx_char.write_nb(  i          | 0x100);} else {ics_rx_char.write_nb(i);}
+        if( i % 3 == 1) {ics_rx_char.write_nb(((i+2) << 1) | 0x100);} else {ics_rx_char.write_nb((i+2) << 1);} //upper position
+        if( i % 3 == 2) {ics_rx_char.write_nb( (i+1)       | 0x100);} else {ics_rx_char.write_nb(i+1);}        //lower position
+    }
+    for(int i = 0; i < 32; ++i){
+        ics_tx_char_exp.write_nb(i | 0x80);
+        ics_tx_char_exp.write_nb(i+2);//upper position
+        ics_tx_char_exp.write_nb(i+1);//lower position
+    }
+    cyclic0_start.write_nb(1);
+
+    ap_uint<32> cyclic0_config, cyclic1_config,cyclic2_config;
+    ap_uint<1> cyclic0_enable, cyclic1_enable,cyclic2_enable;
+    cyclic0_config = 0x80000032;
+    cyclic1_config = 0x80000032;
+    cyclic2_config = 0x800003e8;
+    ap_uint<16> cyclic0_interval, cyclic1_interval, cyclic2_interval;
+    ics_if_main(
+        0,//ap_uint<3> bit_period_config_i,
+        32,//ap_uint<6> number_of_servos_i,
+        cyclic0_config,
+        &cyclic0_interval,
+        &cyclic0_enable,
+        cyclic1_config,
+        &cyclic1_interval,
+        &cyclic1_enable,
+        cyclic2_config,
+        &cyclic2_interval,
+        &cyclic2_enable,
+        &cmd_error_cnt,//ap_uint<8> cmd_error_cnt_o,
+        communication_memory,
+        // ics_if_tx and ics_if_rx
+        &bit_period,
+        // ics_if_tx
+        ics_tx_char,//hls::stream<uint8_t> &ics_tx_char_o,
+        // ics_if_rx
+        ics_rx_char,//hls::stream<uint8_t> &ics_rx_char_i,
+        &ics_rx_char_rst,
+        //timer for cyclic 0
+        cyclic0_start,//hls::stream<uint1_t> &cyclic0_start_i,
+        //timer for cyclic 1
+        cyclic1_start,//hls::stream<uint1_t> &cyclic1_start_i,
+        //timer for cyclic 2
+        cyclic2_start//hls::stream<uint1_t> &cyclic2_start_i
+    );
+
+    for(int i = 0; i < 512; ++i) {
+        compare_memory_elem(communication_memory_exp[i], communication_memory[i],i);
+    }
+    compare_tx_character(ics_tx_char_exp, ics_tx_char,32*3);
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

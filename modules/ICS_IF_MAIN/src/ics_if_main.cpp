@@ -36,7 +36,7 @@ void ics_if_main(
     // ics_if_tx
     hls::stream<uint8_t> &ics_tx_char_o,
     // ics_if_rx
-    hls::stream<uint8_t> &ics_rx_char_i,
+    hls::stream<uint9_t> &ics_rx_char_i,//parity err, char
     volatile ap_uint<1> *ics_rx_char_rst_o,
     //timer for cyclic 0
     hls::stream<uint1_t> &cyclic0_start_i,
@@ -76,6 +76,8 @@ void ics_if_main(
     ap_uint<17> rx_timeout_init;
     ap_uint<32> rx_word;
     uint8_t rx_char;
+    uint9_t rx_char_with_err_flag;
+    uint1_t parity_err;
     uint8_t cyclic0_rx_count;
     ap_uint<17> rx_timeout;
     ap_uint<1> cyclic0_config_enable;
@@ -136,9 +138,12 @@ void ics_if_main(
                 //rx loop
                 rx_char_count = 0;
                 cyclic0_rx_count = ((communication_memory[i + RX_BUF_CYCLIC0_OFFSET] >> 8) + 1) & 0xff;
+                parity_err = 0;
                 while(true) {
                     if(!ics_rx_char_i.empty()){
-                        ics_rx_char_i.read(rx_char);
+                        ics_rx_char_i.read(rx_char_with_err_flag);
+                        rx_char = rx_char_with_err_flag & 0xff;
+                        parity_err = parity_err | rx_char_with_err_flag >> 8;
                         if(rx_char_count == 0 && (((rx_char & 0xe0) != 0) || ((rx_char & 0x1f) != id))){
                             *cmd_error_cnt_o = ++cmd_error_num;
                             break;//cmd error
@@ -148,7 +153,7 @@ void ics_if_main(
                             rx_word = rx_word | (rx_char << 23);//position upper 7bit
                         } else if(rx_char_count == 2){
                             rx_word = rx_word | (rx_char << 16);//position lower 7bit
-                            communication_memory[i + RX_BUF_CYCLIC0_OFFSET] = rx_word;
+                            if(parity_err == 0) communication_memory[i + RX_BUF_CYCLIC0_OFFSET] = rx_word;
                             break;//end rx process
                         } else if(rx_char_count >= 3){
                             break; //error

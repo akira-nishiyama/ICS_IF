@@ -57,7 +57,7 @@ void ics_if_main(
     // ics_if_tx
     hls::stream<uint8_t> &ics_tx_char_o,
     // ics_if_rx
-    hls::stream<uint8_t> &ics_rx_char_i,
+    hls::stream<uint9_t> &ics_rx_char_i,
     volatile ap_uint<1> *ics_rx_char_rst_o,
     //timer for cyclic 0
     hls::stream<uint1_t> &cyclic0_start_i,

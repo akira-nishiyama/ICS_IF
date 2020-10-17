@@ -443,7 +443,7 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net axi_bram_ctrl_0_BRAM_PORTA [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA] [get_bd_intf_pins blk_mem_gen_0/BRAM_PORTB]
   connect_bd_intf_net -intf_net ics_if_main_0_communication_memory_V_PORTA [get_bd_intf_pins blk_mem_gen_0/BRAM_PORTA] [get_bd_intf_pins ics_if_main_0/communication_memory_V_PORTA]
   connect_bd_intf_net -intf_net ics_if_main_0_ics_tx_char_o_V_V [get_bd_intf_pins ics_if_main_0/ics_tx_char_o_V] [get_bd_intf_pins ics_if_tx_0/ics_char_i_V]
-  connect_bd_intf_net -intf_net ics_if_rx_0_ics_char_o_V [get_bd_intf_pins ics_if_main_0/ics_rx_char_i_V] [get_bd_intf_pins ics_if_rx_0/ics_char_o_V]
+  connect_bd_intf_net -intf_net ics_if_rx_0_ics_char_o_V_V [get_bd_intf_pins ics_if_main_0/ics_rx_char_i_V_V] [get_bd_intf_pins ics_if_rx_0/ics_char_o_V_V]
   connect_bd_intf_net -intf_net s_axi_slv0_0_1 [get_bd_intf_ports s_axi_for_reg] [get_bd_intf_pins ics_if_main_0/s_axi_slv0]
 
   # Create port connections
