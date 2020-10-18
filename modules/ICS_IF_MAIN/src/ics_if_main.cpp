@@ -144,14 +144,16 @@ void ics_if_main(
                         ics_rx_char_i.read(rx_char_with_err_flag);
                         rx_char = rx_char_with_err_flag & 0xff;
                         parity_err = parity_err | rx_char_with_err_flag >> 8;
-                        if(rx_char_count == 0 && (((rx_char & 0xe0) != 0) || ((rx_char & 0x1f) != id))){
+                        if(rx_char_count < 3) {
+                            //do nothing. skip loopback character.
+                        } else if(rx_char_count == 3 && (((rx_char & 0xe0) != 0) || ((rx_char & 0x1f) != id))){
                             *cmd_error_cnt_o = ++cmd_error_num;
                             break;//cmd error
-                        } else if(rx_char_count == 0) {
+                        } else if(rx_char_count == 3) {
                             rx_word = rx_char + (cyclic0_rx_count << 8);
-                        } else if(rx_char_count == 1){
+                        } else if(rx_char_count == 4){
                             rx_word = rx_word | (rx_char << 23);//position upper 7bit
-                        } else if(rx_char_count == 2){
+                        } else if(rx_char_count == 5){
                             rx_word = rx_word | (rx_char << 16);//position lower 7bit
                             if(parity_err == 0) communication_memory[i + RX_BUF_CYCLIC0_OFFSET] = rx_word;
                             break;//end rx process

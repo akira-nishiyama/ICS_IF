@@ -131,6 +131,7 @@ set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
 xilinx.com:ip:axi_bram_ctrl:4.1\
+xilinx.com:ip:axis_data_fifo:2.0\
 xilinx.com:ip:blk_mem_gen:8.4\
 xilinx.com:ip:fifo_generator:13.2\
 Akira_Nishiyama:hls:ics_if_main:0.1\
@@ -306,6 +307,12 @@ proc create_root_design { parentCell } {
    CONFIG.SINGLE_PORT_BRAM {1} \
  ] $axi_bram_ctrl_0
 
+  # Create instance: axis_data_fifo_0, and set properties
+  set axis_data_fifo_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 axis_data_fifo_0 ]
+  set_property -dict [ list \
+   CONFIG.FIFO_DEPTH {64} \
+ ] $axis_data_fifo_0
+
   # Create instance: blk_mem_gen_0, and set properties
   set blk_mem_gen_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 blk_mem_gen_0 ]
   set_property -dict [ list \
@@ -441,15 +448,16 @@ proc create_root_design { parentCell } {
   # Create interface connections
   connect_bd_intf_net -intf_net S_AXI_0_1 [get_bd_intf_ports S_AXI_for_bram] [get_bd_intf_pins axi_bram_ctrl_0/S_AXI]
   connect_bd_intf_net -intf_net axi_bram_ctrl_0_BRAM_PORTA [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA] [get_bd_intf_pins blk_mem_gen_0/BRAM_PORTB]
+  connect_bd_intf_net -intf_net axis_data_fifo_0_M_AXIS [get_bd_intf_pins axis_data_fifo_0/M_AXIS] [get_bd_intf_pins ics_if_main_0/ics_rx_char_i_V_V]
   connect_bd_intf_net -intf_net ics_if_main_0_communication_memory_V_PORTA [get_bd_intf_pins blk_mem_gen_0/BRAM_PORTA] [get_bd_intf_pins ics_if_main_0/communication_memory_V_PORTA]
   connect_bd_intf_net -intf_net ics_if_main_0_ics_tx_char_o_V_V [get_bd_intf_pins ics_if_main_0/ics_tx_char_o_V] [get_bd_intf_pins ics_if_tx_0/ics_char_i_V]
-  connect_bd_intf_net -intf_net ics_if_rx_0_ics_char_o_V_V [get_bd_intf_pins ics_if_main_0/ics_rx_char_i_V_V] [get_bd_intf_pins ics_if_rx_0/ics_char_o_V_V]
+  connect_bd_intf_net -intf_net ics_if_rx_0_ics_char_o_V_V [get_bd_intf_pins axis_data_fifo_0/S_AXIS] [get_bd_intf_pins ics_if_rx_0/ics_char_o_V_V]
   connect_bd_intf_net -intf_net s_axi_slv0_0_1 [get_bd_intf_ports s_axi_for_reg] [get_bd_intf_pins ics_if_main_0/s_axi_slv0]
 
   # Create port connections
   connect_bd_net -net Net [get_bd_ports ics_sig] [get_bd_pins util_ds_buf_0/IOBUF_IO_IO]
-  connect_bd_net -net ap_clk_0_1 [get_bd_ports ap_clk_0] [get_bd_pins axi_bram_ctrl_0/s_axi_aclk] [get_bd_pins dff_with_we_0/clk] [get_bd_pins dff_with_we_1/clk] [get_bd_pins fifo_generator_0/clk] [get_bd_pins ics_if_main_0/ap_clk] [get_bd_pins ics_if_rx_0/ap_clk] [get_bd_pins ics_if_tx_0/ap_clk] [get_bd_pins interval_timer_0/ap_clk]
-  connect_bd_net -net ap_rst_n_0_1 [get_bd_ports ap_rst_n_0] [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn] [get_bd_pins ics_if_main_0/ap_rst_n] [get_bd_pins ics_if_tx_0/ap_rst_n] [get_bd_pins interval_timer_0/ap_rst_n] [get_bd_pins util_vector_logic_1/Op2] [get_bd_pins util_vector_logic_2/Op1]
+  connect_bd_net -net ap_clk_0_1 [get_bd_ports ap_clk_0] [get_bd_pins axi_bram_ctrl_0/s_axi_aclk] [get_bd_pins axis_data_fifo_0/s_axis_aclk] [get_bd_pins dff_with_we_0/clk] [get_bd_pins dff_with_we_1/clk] [get_bd_pins fifo_generator_0/clk] [get_bd_pins ics_if_main_0/ap_clk] [get_bd_pins ics_if_rx_0/ap_clk] [get_bd_pins ics_if_tx_0/ap_clk] [get_bd_pins interval_timer_0/ap_clk]
+  connect_bd_net -net ap_rst_n_0_1 [get_bd_ports ap_rst_n_0] [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn] [get_bd_pins axis_data_fifo_0/s_axis_aresetn] [get_bd_pins ics_if_main_0/ap_rst_n] [get_bd_pins ics_if_tx_0/ap_rst_n] [get_bd_pins interval_timer_0/ap_rst_n] [get_bd_pins util_vector_logic_1/Op2] [get_bd_pins util_vector_logic_2/Op1]
   connect_bd_net -net dff_with_we_0_q [get_bd_pins dff_with_we_0/q] [get_bd_pins util_ds_buf_0/IOBUF_IO_I]
   connect_bd_net -net dff_with_we_1_q [get_bd_pins dff_with_we_1/q] [get_bd_pins util_ds_buf_0/IOBUF_IO_T]
   connect_bd_net -net fifo_generator_0_dout [get_bd_pins fifo_generator_0/dout] [get_bd_pins ics_if_main_0/cyclic0_start_i_V_V_dout]

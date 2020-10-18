@@ -353,6 +353,11 @@ TEST_F(IcsIfTest, DoNothingWhenNoTrigger) {
 
 TEST_F(IcsIfTest, Cyclic0Single) {
     for(int i = 0; i < 32; ++i){
+        //loopback
+        ics_rx_char.write_nb(i | 0x80);
+        ics_rx_char.write_nb((i+2) << 1); //upper position
+        ics_rx_char.write_nb(i+1); //lower position
+        //actual
         ics_rx_char.write_nb(i);
         ics_rx_char.write_nb((i+2) << 1); //upper position
         ics_rx_char.write_nb(i+1); //lower position
@@ -418,6 +423,11 @@ TEST_F(IcsIfTest, Cyclic0Single) {
 }
 TEST_F(IcsIfTest, Cyclic0Multi) {
     for(int i = 0; i < 32; ++i){
+        //loopback
+        ics_rx_char.write_nb(i | 0x80);
+        ics_rx_char.write_nb((i+2) << 1); //upper position
+        ics_rx_char.write_nb(i+1); //lower position
+        //actual
         ics_rx_char.write_nb(i);
         ics_rx_char.write_nb((i+2) << 1); //upper position
         ics_rx_char.write_nb(i+1); //lower position
@@ -483,6 +493,11 @@ TEST_F(IcsIfTest, Cyclic0Multi) {
 
     //setup second cycle0
     for(int i = 0; i < 32; ++i){
+        //loopback
+        ics_rx_char.write_nb(i | 0x80);
+        ics_rx_char.write_nb((i+3) << 1); //upper position
+        ics_rx_char.write_nb(i+4); //lower position
+        //actual
         ics_rx_char.write_nb(i);
         ics_rx_char.write_nb((i+3) << 1); //upper position
         ics_rx_char.write_nb(i+4); //lower position
@@ -544,6 +559,9 @@ TEST_F(IcsIfTest, Cyclic0Multi) {
 TEST_F(IcsIfTest, Cyclic0ReceiveIDErr) {
     for(int i = 0; i < 32; ++i){
         ics_rx_char.write_nb(i+1);
+        ics_rx_char.write_nb(i+2);
+        ics_rx_char.write_nb(i+3);
+        ics_rx_char.write_nb(i+4);
     }
     for(int i = 0; i < 32; ++i){
         ics_tx_char_exp.write_nb(i | 0x80);
@@ -597,9 +615,14 @@ TEST_F(IcsIfTest, Cyclic0ReceiveIDErr) {
 TEST_F(IcsIfTest, Cyclic0ReceivePalityErr) {
     //should not update communication memory if received frame has parity error.
     for(int i = 0; i < 32; ++i){
-        if( i % 3 == 0) {ics_rx_char.write_nb(  i          | 0x100);} else {ics_rx_char.write_nb(i);}
+        //loopback
+        if( i % 3 == 0) {ics_rx_char.write_nb(  i          | 0x100);} else {ics_rx_char.write_nb(i | 0x80);}
         if( i % 3 == 1) {ics_rx_char.write_nb(((i+2) << 1) | 0x100);} else {ics_rx_char.write_nb((i+2) << 1);} //upper position
         if( i % 3 == 2) {ics_rx_char.write_nb( (i+1)       | 0x100);} else {ics_rx_char.write_nb(i+1);}        //lower position
+        //actual
+        if( i % 3 == 3) {ics_rx_char.write_nb(  i          | 0x100);} else {ics_rx_char.write_nb(i);}
+        if( i % 3 == 4) {ics_rx_char.write_nb(((i+2) << 1) | 0x100);} else {ics_rx_char.write_nb((i+2) << 1);} //upper position
+        if( i % 3 == 5) {ics_rx_char.write_nb( (i+1)       | 0x100);} else {ics_rx_char.write_nb(i+1);}        //lower position
     }
     for(int i = 0; i < 32; ++i){
         ics_tx_char_exp.write_nb(i | 0x80);
