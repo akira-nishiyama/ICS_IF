@@ -67,7 +67,7 @@ void ics_if_main(
 #pragma HLS INTERFACE s_axilite port=cyclic1_config_i offset=0x28 bundle=slv0
 #pragma HLS INTERFACE s_axilite port=cyclic2_config_i offset=0x30 bundle=slv0
 #pragma HLS INTERFACE s_axilite port=cmd_error_cnt_o offset=0x38 bundle=slv0
-#pragma HLS INTERFACE bram depth=512 port=communication_memory
+#pragma HLS INTERFACE bram depth=512 latency=1 port=communication_memory
 //#pragma HLS dataflow
     ap_uint<1> cyclic0_command;
     ap_uint<1> cyclic1_command;

@@ -44,7 +44,8 @@ list(APPEND SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dff_with_we.v")
 set(TESTBENCH_FILES "")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv")
-list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_uvm.sv")
+list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_uvm_single_communication.sv")
+list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_uvm_multi_communication.sv")
 list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_ics_if_uvm_test_pkg.sv")
 #list(APPEND TESTBENCH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard/gp_scoreboard.sv")
 list(APPEND TESTBENCH_FILES "${gp_scoreboard_SIM_FILES}")
@@ -85,7 +86,6 @@ add_custom_target(elaborate_all DEPENDS compile_all)
 add_custom_target(sim_all DEPENDS elaborate_all)
 
 set(INCLUDE_DIRS_VER "")
-#list(APPEND INCLUDE_DIRS_VER "-i ${CMAKE_CURRENT_SOURCE_DIR}/test/lib/uvm_gp_scoreboard")
 list(APPEND INCLUDE_DIRS_VER "-i ${CMAKE_CURRENT_SOURCE_DIR}/test/include")
 list(APPEND INCLUDE_DIRS_VER "${simple_axi_uvm_DEFINITIONS_VLOG} ${simple_ics_uvm_DEFINITIONS_VLOG} ${gp_scoreboard_DEFINITIONS_VLOG}")
 
@@ -98,7 +98,8 @@ set(ADDITIONAL_XSIM_OPTS "-testplusarg UVM_TESTNAME")
 
 add_sim(tb_interval_timer ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_interval_timer.v" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" "")
 add_sim(tb_uvm_test ${SIMULATION_DIR} "${DEPENDENCIES};${CMAKE_CURRENT_SOURCE_DIR}/test/src/tb_uvm_test.sv" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_interval_timer)
-add_sim(tb_ics_if_uvm ${SIMULATION_DIR} "${DEPENDENCIES};${TB_ICS_IF_DEPENDENCIES}" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_uvm_test)
+add_sim(tb_ics_if_uvm_single_communication ${SIMULATION_DIR} "${DEPENDENCIES};${TB_ICS_IF_DEPENDENCIES}" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_uvm_test)
+add_sim(tb_ics_if_uvm_multi_communication ${SIMULATION_DIR} "${DEPENDENCIES};${TB_ICS_IF_DEPENDENCIES}" "${ADDITIONAL_VLOG_OPTS}" "${ADDITIONAL_ELAB_OPTS}" "${ADDITIONAL_XSIM_OPTS}" tb_uvm_test)
 
 #document generation
 add_pandoc(ics_if "${CMAKE_CURRENT_SOURCE_DIR}/docs/ics_if.md")

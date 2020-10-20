@@ -48,6 +48,21 @@ class init_all_register_seq extends simple_axi_master_base_sequence;
 
 endclass
 
+class multi_servo_config_seq extends simple_axi_master_base_sequence;
+    `uvm_object_utils(multi_servo_config_seq)
+    function new(string name="init_all_register_seq");
+        super.new(name);
+    endfunction
+
+    virtual task body();
+        simple_axi_seq_item trans_item;
+        `uvm_create(trans_item);
+        transfer_item(.trans_item(trans_item), .addr(32'h00000018), .data({32'h0000_0020}), .length(0), .access_type(simple_axi_seq_item::WRITE), .resp_code(simple_axi_seq_item::OKAY));
+        transfer_item(.trans_item(trans_item), .addr(32'h00000020), .data({32'h8000_0021}), .length(0), .access_type(simple_axi_seq_item::WRITE), .resp_code(simple_axi_seq_item::OKAY));
+    endtask
+
+endclass
+
 //axi-bram sequence
 class init_bram_seq extends simple_axi_master_base_sequence;
     `uvm_object_utils(init_bram_seq)

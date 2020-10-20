@@ -93,9 +93,11 @@ void check_direction(
     ap_uint<10> bit_period
 ){
     ap_uint<1> ics_sig_dir_result;
-    ics_sig_dir.read_nb(ics_sig_dir_result);
-    EXPECT_EQ(0,ics_sig_dir_result);
-    for(int i = 0; i < bit_period*11; ++i){
+    for(int i = 0; i < bit_period * 2; ++i){
+        ics_sig_dir.read_nb(ics_sig_dir_result);
+        EXPECT_EQ(0,ics_sig_dir_result);
+    }
+    for(int i = 0; i < bit_period*10; ++i){
         ics_sig_dir.read_nb(ics_sig_dir_result);
         EXPECT_EQ(1,ics_sig_dir_result);
     }
