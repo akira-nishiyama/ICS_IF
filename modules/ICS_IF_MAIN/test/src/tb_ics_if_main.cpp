@@ -1,6 +1,6 @@
 /************************************************************************
- * @file tb_ics_if_core.cpp
- * @brief testbench of ics_if_core.main
+ * @file tb_ics_if_main.cpp
+ * @brief testbench of ics_if_main.cpp
  * @author Akira Nishiyama
  * @date 2020/06/20
  * @par History
@@ -16,6 +16,7 @@
 #include <ap_int.h>
 #include <hls_stream.h>
 #include "ics_if_main.h"
+#include "gtest/gtest.h"
 
 void print_result_character(
         hls::stream<uint8_t> &ics_sig
@@ -25,6 +26,20 @@ void print_result_character(
     while(!ics_sig.empty()){
         ics_sig.read_nb(reg);
         std::cout << std::hex << std::setw(2) << std::setfill('0') << +reg << std::endl;
+    }
+}
+
+void compare_tx_character(hls::stream<uint8_t> &tx_exp, hls::stream<uint8_t> &tx, int num){
+    uint8_t val,val_exp;
+    for(int i = 0; i < num; ++i){
+        std::stringstream ss, ss_exp;
+        tx.read_nb(val);
+        tx_exp.read_nb(val_exp);
+        ss     << std::setw(2) << std::setfill('0') << std::hex << (int)val;
+        ss_exp << std::setw(2) << std::setfill('0') << std::hex << (int)val_exp;
+        //std::cout << "obs:" << ss.str()     << std::endl;
+        //std::cout << "exp:" << ss_exp.str() << std::endl;
+        EXPECT_EQ(ss_exp.str(),ss.str()) << "differ tx and tx_exp index at 0x" << std::hex << i;
     }
 }
 
@@ -75,19 +90,6 @@ void print_result_direction(
     std::cout << std::endl;
 }
 
-void input_stream(
-    hls::stream<uint1_t> &ics_sig,
-    unsigned char ch,
-    ap_int<10> bit_period
-){
-    ap_uint<10> tx_ch = (ch & 0x0ff) * 2 + 1;//add start bit and stop bit.
-    for(int i = 0; i < 10; ++i){
-        for(int j = 0; j < bit_period; ++j){
-            ics_sig.write_nb((tx_ch >> (10 - i - 1) & 0x01));
-        }
-    }
-}
-
 void input_idle(
     hls::stream<uint1_t> &ics_sig,
     int count
@@ -109,33 +111,17 @@ void dump_memory(
     std::cout << std::resetiosflags(std::ios_base::floatfield);
 }
 
-int main(void){
-    ap_uint<10> bit_period;
-    ap_uint<5> number_of_servos = 1;
-    ap_uint<8> cmd_error_cnt;
-    ap_uint<32> communication_memory[512] = {};
-    ap_uint<8> ics_char=0;
-    hls::stream<uint8_t> ics_tx_char;
-    hls::stream<uint8_t> ics_rx_char;
-//    std::cout << "Hello iostream" << std::endl;
-    hls::stream<uint1_t>  cyclic0_start;
-    hls::stream<uint1_t>  cyclic1_start;
-    hls::stream<uint1_t>  cyclic2_start;
-    volatile ap_uint<10> dummy = 0;
-    volatile ap_uint<1> ics_rx_char_rst;
+void compare_memory_elem(ap_uint<32> elem_exp, ap_uint<32> elem, int i){
+    std::stringstream ss,ss_exp;
+    int val     = elem;
+    int val_exp = elem_exp;
+    ss     << std::setw(8) << std::setfill('0') << std::hex << val;
+    ss_exp << std::setw(8) << std::setfill('0') << std::hex << val_exp;
+    EXPECT_EQ(ss_exp.str(), ss.str()) << "differ memory and memory_exp index at 0x" << std::hex << (i+512) * 4;
+}
 
+//int old_main(void){
     //initialize communication memory
-        for(int i = 0; i < 512; ++i){
-//            communication_memory[i] =    (((i * 4 + 4) & 0xff) << 24) +
-//                                        (((i * 4 + 3) & 0xff) << 16) +
-//                                        (((i * 4 + 2) & 0xff) << 8 ) +
-//                                         ((i * 4 + 1) & 0xff);
-            communication_memory[i] = 0;
-        }
-    //cyclic0
-    for(int i = 0; i < 32; ++i){
-        communication_memory[i] = (i + ((i + 1) << 8) + ((i + 2) << 16)) | 0x80;
-    }
 //    //cyclic1
 //    communication_memory[32] = 0x000003a0;
 //    communication_memory[33] = 0x000003a1;
@@ -151,11 +137,6 @@ int main(void){
     //initialize ics_sig_i
     //cyclic0
     //cyclic0 servo_index0
-    for(int i = 0; i < 32; ++i){
-        ics_rx_char.write_nb(i);
-        ics_rx_char.write_nb((i+2) << 1); //upper position
-        ics_rx_char.write_nb(i+1); //lower position
-    }
 //    //cyclic1
 //    //cyclic1 servo_index0
 //    input_stream(ics_sig_i,0xa0,bit_period);//loopback
@@ -215,9 +196,63 @@ int main(void){
 //    input_stream(ics_sig_i,0x04,bit_period);//receive
 //    input_stream(ics_sig_i,0x4b,bit_period);//receive
 
-    cyclic0_start.write_nb(1);
 
-    std::cout << "===============cyclic0 test====================" << std::endl;
+
+
+//    return 0;
+//}
+
+class IcsIfTest : public testing::Test {
+    protected:
+    ap_uint<10> bit_period;
+    ap_uint<5> number_of_servos = 1;
+    ap_uint<8> cmd_error_cnt;
+    ap_uint<32> communication_memory[512] = {};
+    ap_uint<32> communication_memory_exp[512] = {};
+    ap_uint<8> ics_char=0;
+    hls::stream<uint8_t> ics_tx_char;
+    hls::stream<uint8_t> ics_tx_char_exp;
+    hls::stream<uint9_t> ics_rx_char;
+    hls::stream<uint1_t>  cyclic0_start;
+    hls::stream<uint1_t>  cyclic1_start;
+    hls::stream<uint1_t>  cyclic2_start;
+    volatile ap_uint<10> dummy = 0;
+    volatile ap_uint<1> ics_rx_char_rst;
+
+    
+    IcsIfTest() {
+    }
+    
+    virtual ~IcsIfTest() {
+    }
+    
+    virtual void SetUp() {
+        cmd_error_cnt = 0;
+        for(int i = 0; i < 512; ++i){
+            communication_memory[i] = 0;
+            communication_memory_exp[i] = 0;
+        }
+        //cyclic0
+        for(int i = 0; i < 32; ++i){
+            communication_memory[i]     = (i + ((i + 1) << 16) + ((i + 2) << 23)) | 0x80;
+            communication_memory_exp[i] = (i + ((i + 1) << 16) + ((i + 2) << 23)) | 0x80;
+        }
+    }
+    
+    virtual void TearDown() {
+        EXPECT_EQ(0,ics_tx_char.size());
+        EXPECT_EQ(0,ics_tx_char_exp.size());
+        EXPECT_EQ(0,ics_rx_char.size());
+//    std::cout << "===============c_expommunication memory====================" << std::endl;
+//        dump_memory(communication_memory);
+//    std::cout << "===============communication memory_exp====================" << std::endl;
+//        dump_memory(communication_memory_exp);
+//        print_result_character(ics_tx_char);
+//        std::cout << "cmd_err:" << cmd_error_cnt << std::endl;
+    }
+};
+
+TEST_F(IcsIfTest, DoNothingWhenNoTrigger) {
 
     ap_uint<32> cyclic0_config, cyclic1_config,cyclic2_config;
     ap_uint<1> cyclic0_enable, cyclic1_enable,cyclic2_enable;
@@ -226,7 +261,7 @@ int main(void){
     cyclic2_config = 0x800003e8;
     ap_uint<16> cyclic0_interval, cyclic1_interval, cyclic2_interval;
     ics_if_main(
-        1,//ap_uint<3> bit_period_config_i,
+        0,//ap_uint<3> bit_period_config_i,
         32,//ap_uint<6> number_of_servos_i,
         cyclic0_config,
         &cyclic0_interval,
@@ -254,8 +289,96 @@ int main(void){
         cyclic2_start//hls::stream<uint1_t> &cyclic2_start_i
     );
 
+    EXPECT_EQ(1,cyclic0_enable);
+    EXPECT_EQ(0x32,cyclic0_interval);
+    EXPECT_EQ(1,cyclic1_enable);
+    EXPECT_EQ(0x32,cyclic1_interval);
+    EXPECT_EQ(1,cyclic2_enable);
+    EXPECT_EQ(0x3e8,cyclic2_interval);
+    EXPECT_EQ(868,bit_period);
+
+    EXPECT_EQ(0,cmd_error_cnt);
+}
+
+//Could not check in cosim. due to left over hls::stream.
+/*TEST_F(IcsIfTest, DoNothingWhenServoNumEqualsToZero) {
+
+    ap_uint<32> cyclic0_config, cyclic1_config,cyclic2_config;
+    ap_uint<1> cyclic0_enable, cyclic1_enable,cyclic2_enable;
+    cyclic0_config = 0x80000032;
+    cyclic1_config = 0x80000032;
+    cyclic2_config = 0x800003e8;
+    cyclic0_start.write_nb(1);
+    ap_uint<16> cyclic0_interval, cyclic1_interval, cyclic2_interval;
     ics_if_main(
-        1,//ap_uint<3> bit_period_config_i,
+        0,//ap_uint<3> bit_period_config_i,
+        0,//ap_uint<6> number_of_servos_i,
+        cyclic0_config,
+        &cyclic0_interval,
+        &cyclic0_enable,
+        cyclic1_config,
+        &cyclic1_interval,
+        &cyclic1_enable,
+        cyclic2_config,
+        &cyclic2_interval,
+        &cyclic2_enable,
+        &cmd_error_cnt,//ap_uint<8> cmd_error_cnt_o,
+        communication_memory,
+        // ics_if_tx and ics_if_rx
+        &bit_period,
+        // ics_if_tx
+        ics_tx_char,//hls::stream<uint8_t> &ics_tx_char_o,
+        // ics_if_rx
+        ics_rx_char,//hls::stream<uint8_t> &ics_rx_char_i,
+        &ics_rx_char_rst,
+        //timer for cyclic 0
+        cyclic0_start,//hls::stream<uint1_t> &cyclic0_start_i,
+        //timer for cyclic 1
+        cyclic1_start,//hls::stream<uint1_t> &cyclic1_start_i,
+        //timer for cyclic 2
+        cyclic2_start//hls::stream<uint1_t> &cyclic2_start_i
+    );
+
+    EXPECT_EQ(1,cyclic0_enable);
+    EXPECT_EQ(0x32,cyclic0_interval);
+    EXPECT_EQ(1,cyclic1_enable);
+    EXPECT_EQ(0x32,cyclic1_interval);
+    EXPECT_EQ(1,cyclic2_enable);
+    EXPECT_EQ(0x3e8,cyclic2_interval);
+    EXPECT_EQ(868,bit_period);
+
+    EXPECT_EQ(0,cmd_error_cnt);
+    EXPECT_EQ(0,ics_tx_char.size());
+}*/
+
+TEST_F(IcsIfTest, Cyclic0Single) {
+    for(int i = 0; i < 32; ++i){
+        //loopback
+        ics_rx_char.write_nb(i | 0x80);
+        ics_rx_char.write_nb((i+2) << 1); //upper position
+        ics_rx_char.write_nb(i+1); //lower position
+        //actual
+        ics_rx_char.write_nb(i);
+        ics_rx_char.write_nb((i+2) << 1); //upper position
+        ics_rx_char.write_nb(i+1); //lower position
+        communication_memory_exp[256+i] = ((i+2) << 24) + ((i+1) << 16) + (1 << 8)  + i;
+    }
+    for(int i = 0; i < 32; ++i){
+        ics_tx_char_exp.write_nb(i | 0x80);
+        ics_tx_char_exp.write_nb(i+2);//upper position
+        ics_tx_char_exp.write_nb(i+1);//lower position
+    }
+
+    cyclic0_start.write_nb(1);
+
+    ap_uint<32> cyclic0_config, cyclic1_config,cyclic2_config;
+    ap_uint<1> cyclic0_enable, cyclic1_enable,cyclic2_enable;
+    cyclic0_config = 0x80000032;
+    cyclic1_config = 0x80000032;
+    cyclic2_config = 0x800003e8;
+    ap_uint<16> cyclic0_interval, cyclic1_interval, cyclic2_interval;
+    ics_if_main(
+        0,//ap_uint<3> bit_period_config_i,
         32,//ap_uint<6> number_of_servos_i,
         cyclic0_config,
         &cyclic0_interval,
@@ -271,7 +394,7 @@ int main(void){
         // ics_if_tx and ics_if_rx
         &bit_period,
         // ics_if_tx
-        ics_tx_char,//hls::stream<uint9_t> &ics_tx_char_o,
+        ics_tx_char,//hls::stream<uint8_t> &ics_tx_char_o,
         // ics_if_rx
         ics_rx_char,//hls::stream<uint8_t> &ics_rx_char_i,
         &ics_rx_char_rst,
@@ -284,9 +407,272 @@ int main(void){
     );
 
 
-    dump_memory(communication_memory);
-    print_result_character(ics_tx_char);
-    std::cout << "cmd_err:" << cmd_error_cnt << std::endl;
+    EXPECT_EQ(1,cyclic0_enable);
+    EXPECT_EQ(0x32,cyclic0_interval);
+    EXPECT_EQ(1,cyclic1_enable);
+    EXPECT_EQ(0x32,cyclic1_interval);
+    EXPECT_EQ(1,cyclic2_enable);
+    EXPECT_EQ(0x3e8,cyclic2_interval);
+    EXPECT_EQ(868,bit_period);
+    //EXPECT_EQ(memcmp(communication_memory,communication_memory_exp,512*sizeof(ap_uint<32>)),0);
+    for(int i = 0; i < 512; ++i) {
+        compare_memory_elem(communication_memory_exp[i], communication_memory[i],i);
+    }
+    compare_tx_character(ics_tx_char_exp, ics_tx_char,32*3);
+    EXPECT_EQ(0,cmd_error_cnt);
+}
+TEST_F(IcsIfTest, Cyclic0Multi) {
+    for(int i = 0; i < 32; ++i){
+        //loopback
+        ics_rx_char.write_nb(i | 0x80);
+        ics_rx_char.write_nb((i+2) << 1); //upper position
+        ics_rx_char.write_nb(i+1); //lower position
+        //actual
+        ics_rx_char.write_nb(i);
+        ics_rx_char.write_nb((i+2) << 1); //upper position
+        ics_rx_char.write_nb(i+1); //lower position
+        communication_memory_exp[256+i] = ((i+2) << 24) + ((i+1) << 16) + (1 << 8)  + i;
+    }
+    for(int i = 0; i < 32; ++i){
+        ics_tx_char_exp.write_nb(i | 0x80);
+        ics_tx_char_exp.write_nb(i+2);//upper position
+        ics_tx_char_exp.write_nb(i+1);//lower position
+    }
 
-    return 0;
+    cyclic0_start.write_nb(1);
+
+    ap_uint<32> cyclic0_config, cyclic1_config,cyclic2_config;
+    ap_uint<1> cyclic0_enable, cyclic1_enable,cyclic2_enable;
+    cyclic0_config = 0x80000032;
+    cyclic1_config = 0x80000032;
+    cyclic2_config = 0x800003e8;
+    ap_uint<16> cyclic0_interval, cyclic1_interval, cyclic2_interval;
+
+    ics_if_main(
+        0,//ap_uint<3> bit_period_config_i,
+        32,//ap_uint<6> number_of_servos_i,
+        cyclic0_config,
+        &cyclic0_interval,
+        &cyclic0_enable,
+        cyclic1_config,
+        &cyclic1_interval,
+        &cyclic1_enable,
+        cyclic2_config,
+        &cyclic2_interval,
+        &cyclic2_enable,
+        &cmd_error_cnt,//ap_uint<8> cmd_error_cnt_o,
+        communication_memory,
+        // ics_if_tx and ics_if_rx
+        &bit_period,
+        // ics_if_tx
+        ics_tx_char,//hls::stream<uint8_t> &ics_tx_char_o,
+        // ics_if_rx
+        ics_rx_char,//hls::stream<uint8_t> &ics_rx_char_i,
+        &ics_rx_char_rst,
+        //timer for cyclic 0
+        cyclic0_start,//hls::stream<uint1_t> &cyclic0_start_i,
+        //timer for cyclic 1
+        cyclic1_start,//hls::stream<uint1_t> &cyclic1_start_i,
+        //timer for cyclic 2
+        cyclic2_start//hls::stream<uint1_t> &cyclic2_start_i
+    );
+    //check first cycle0
+    EXPECT_EQ(1,cyclic0_enable);
+    EXPECT_EQ(0x32,cyclic0_interval);
+    EXPECT_EQ(1,cyclic1_enable);
+    EXPECT_EQ(0x32,cyclic1_interval);
+    EXPECT_EQ(1,cyclic2_enable);
+    EXPECT_EQ(0x3e8,cyclic2_interval);
+    EXPECT_EQ(868,bit_period);
+
+    for(int i = 0; i < 512; ++i) {
+        compare_memory_elem(communication_memory_exp[i], communication_memory[i],i);
+    }
+    compare_tx_character(ics_tx_char_exp, ics_tx_char,32*3);
+    EXPECT_EQ(0,cmd_error_cnt);
+
+    //setup second cycle0
+    for(int i = 0; i < 32; ++i){
+        //loopback
+        ics_rx_char.write_nb(i | 0x80);
+        ics_rx_char.write_nb((i+3) << 1); //upper position
+        ics_rx_char.write_nb(i+4); //lower position
+        //actual
+        ics_rx_char.write_nb(i);
+        ics_rx_char.write_nb((i+3) << 1); //upper position
+        ics_rx_char.write_nb(i+4); //lower position
+        communication_memory_exp[256+i] = ((i+3) << 24) + ((i+4) << 16) + (2 << 8)  + i;
+    }
+
+    for(int i = 0; i < 32; ++i){
+        ics_tx_char_exp.write_nb(i | 0x80);
+        ics_tx_char_exp.write_nb(i+2);//upper position
+        ics_tx_char_exp.write_nb(i+1);//lower position
+    }
+
+    cyclic0_start.write_nb(1);
+
+    ics_if_main(
+        0,//ap_uint<3> bit_period_config_i,
+        32,//ap_uint<6> number_of_servos_i,
+        cyclic0_config,
+        &cyclic0_interval,
+        &cyclic0_enable,
+        cyclic1_config,
+        &cyclic1_interval,
+        &cyclic1_enable,
+        cyclic2_config,
+        &cyclic2_interval,
+        &cyclic2_enable,
+        &cmd_error_cnt,//ap_uint<8> cmd_error_cnt_o,
+        communication_memory,
+        // ics_if_tx and ics_if_rx
+        &bit_period,
+        // ics_if_tx
+        ics_tx_char,//hls::stream<uint8_t> &ics_tx_char_o,
+        // ics_if_rx
+        ics_rx_char,//hls::stream<uint8_t> &ics_rx_char_i,
+        &ics_rx_char_rst,
+        //timer for cyclic 0
+        cyclic0_start,//hls::stream<uint1_t> &cyclic0_start_i,
+        //timer for cyclic 1
+        cyclic1_start,//hls::stream<uint1_t> &cyclic1_start_i,
+        //timer for cyclic 2
+        cyclic2_start//hls::stream<uint1_t> &cyclic2_start_i
+    );
+    //check second cycle0
+    EXPECT_EQ(1,cyclic0_enable);
+    EXPECT_EQ(0x32,cyclic0_interval);
+    EXPECT_EQ(1,cyclic1_enable);
+    EXPECT_EQ(0x32,cyclic1_interval);
+    EXPECT_EQ(1,cyclic2_enable);
+    EXPECT_EQ(0x3e8,cyclic2_interval);
+    EXPECT_EQ(868,bit_period);
+    //EXPECT_EQ(memcmp(communication_memory,communication_memory_exp,512*sizeof(ap_uint<32>)),0);
+    for(int i = 0; i < 512; ++i) {
+        compare_memory_elem(communication_memory_exp[i], communication_memory[i],i);
+    }
+    compare_tx_character(ics_tx_char_exp, ics_tx_char,32*3);
+    EXPECT_EQ(0,cmd_error_cnt);
+}
+
+TEST_F(IcsIfTest, Cyclic0ReceiveIDErr) {
+    for(int i = 0; i < 32; ++i){
+        ics_rx_char.write_nb(i+1);
+        ics_rx_char.write_nb(i+2);
+        ics_rx_char.write_nb(i+3);
+        ics_rx_char.write_nb(i+4);
+    }
+    for(int i = 0; i < 32; ++i){
+        ics_tx_char_exp.write_nb(i | 0x80);
+        ics_tx_char_exp.write_nb(i+2);//upper position
+        ics_tx_char_exp.write_nb(i+1);//lower position
+    }
+
+    cyclic0_start.write_nb(1);
+
+    ap_uint<32> cyclic0_config, cyclic1_config,cyclic2_config;
+    ap_uint<1> cyclic0_enable, cyclic1_enable,cyclic2_enable;
+    cyclic0_config = 0x80000032;
+    cyclic1_config = 0x80000032;
+    cyclic2_config = 0x800003e8;
+    ap_uint<16> cyclic0_interval, cyclic1_interval, cyclic2_interval;
+    ics_if_main(
+        0,//ap_uint<3> bit_period_config_i,
+        32,//ap_uint<6> number_of_servos_i,
+        cyclic0_config,
+        &cyclic0_interval,
+        &cyclic0_enable,
+        cyclic1_config,
+        &cyclic1_interval,
+        &cyclic1_enable,
+        cyclic2_config,
+        &cyclic2_interval,
+        &cyclic2_enable,
+        &cmd_error_cnt,//ap_uint<8> cmd_error_cnt_o,
+        communication_memory,
+        // ics_if_tx and ics_if_rx
+        &bit_period,
+        // ics_if_tx
+        ics_tx_char,//hls::stream<uint8_t> &ics_tx_char_o,
+        // ics_if_rx
+        ics_rx_char,//hls::stream<uint8_t> &ics_rx_char_i,
+        &ics_rx_char_rst,
+        //timer for cyclic 0
+        cyclic0_start,//hls::stream<uint1_t> &cyclic0_start_i,
+        //timer for cyclic 1
+        cyclic1_start,//hls::stream<uint1_t> &cyclic1_start_i,
+        //timer for cyclic 2
+        cyclic2_start//hls::stream<uint1_t> &cyclic2_start_i
+    );
+    for(int i = 0; i < 512; ++i) {
+        compare_memory_elem(communication_memory_exp[i], communication_memory[i],i);
+    }
+    compare_tx_character(ics_tx_char_exp, ics_tx_char,32*3);
+    EXPECT_EQ(32,cmd_error_cnt);
+}
+
+TEST_F(IcsIfTest, Cyclic0ReceivePalityErr) {
+    //should not update communication memory if received frame has parity error.
+    for(int i = 0; i < 32; ++i){
+        //loopback
+        if( i % 3 == 0) {ics_rx_char.write_nb(  i          | 0x100);} else {ics_rx_char.write_nb(i | 0x80);}
+        if( i % 3 == 1) {ics_rx_char.write_nb(((i+2) << 1) | 0x100);} else {ics_rx_char.write_nb((i+2) << 1);} //upper position
+        if( i % 3 == 2) {ics_rx_char.write_nb( (i+1)       | 0x100);} else {ics_rx_char.write_nb(i+1);}        //lower position
+        //actual
+        if( i % 3 == 3) {ics_rx_char.write_nb(  i          | 0x100);} else {ics_rx_char.write_nb(i);}
+        if( i % 3 == 4) {ics_rx_char.write_nb(((i+2) << 1) | 0x100);} else {ics_rx_char.write_nb((i+2) << 1);} //upper position
+        if( i % 3 == 5) {ics_rx_char.write_nb( (i+1)       | 0x100);} else {ics_rx_char.write_nb(i+1);}        //lower position
+    }
+    for(int i = 0; i < 32; ++i){
+        ics_tx_char_exp.write_nb(i | 0x80);
+        ics_tx_char_exp.write_nb(i+2);//upper position
+        ics_tx_char_exp.write_nb(i+1);//lower position
+    }
+    cyclic0_start.write_nb(1);
+
+    ap_uint<32> cyclic0_config, cyclic1_config,cyclic2_config;
+    ap_uint<1> cyclic0_enable, cyclic1_enable,cyclic2_enable;
+    cyclic0_config = 0x80000032;
+    cyclic1_config = 0x80000032;
+    cyclic2_config = 0x800003e8;
+    ap_uint<16> cyclic0_interval, cyclic1_interval, cyclic2_interval;
+    ics_if_main(
+        0,//ap_uint<3> bit_period_config_i,
+        32,//ap_uint<6> number_of_servos_i,
+        cyclic0_config,
+        &cyclic0_interval,
+        &cyclic0_enable,
+        cyclic1_config,
+        &cyclic1_interval,
+        &cyclic1_enable,
+        cyclic2_config,
+        &cyclic2_interval,
+        &cyclic2_enable,
+        &cmd_error_cnt,//ap_uint<8> cmd_error_cnt_o,
+        communication_memory,
+        // ics_if_tx and ics_if_rx
+        &bit_period,
+        // ics_if_tx
+        ics_tx_char,//hls::stream<uint8_t> &ics_tx_char_o,
+        // ics_if_rx
+        ics_rx_char,//hls::stream<uint8_t> &ics_rx_char_i,
+        &ics_rx_char_rst,
+        //timer for cyclic 0
+        cyclic0_start,//hls::stream<uint1_t> &cyclic0_start_i,
+        //timer for cyclic 1
+        cyclic1_start,//hls::stream<uint1_t> &cyclic1_start_i,
+        //timer for cyclic 2
+        cyclic2_start//hls::stream<uint1_t> &cyclic2_start_i
+    );
+
+    for(int i = 0; i < 512; ++i) {
+        compare_memory_elem(communication_memory_exp[i], communication_memory[i],i);
+    }
+    compare_tx_character(ics_tx_char_exp, ics_tx_char,32*3);
+}
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

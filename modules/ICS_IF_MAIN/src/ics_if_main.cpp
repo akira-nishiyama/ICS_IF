@@ -36,7 +36,7 @@ void ics_if_main(
     // ics_if_tx
     hls::stream<uint8_t> &ics_tx_char_o,
     // ics_if_rx
-    hls::stream<uint8_t> &ics_rx_char_i,
+    hls::stream<uint9_t> &ics_rx_char_i,//parity err, char
     volatile ap_uint<1> *ics_rx_char_rst_o,
     //timer for cyclic 0
     hls::stream<uint1_t> &cyclic0_start_i,
@@ -67,7 +67,7 @@ void ics_if_main(
 #pragma HLS INTERFACE s_axilite port=cyclic1_config_i offset=0x28 bundle=slv0
 #pragma HLS INTERFACE s_axilite port=cyclic2_config_i offset=0x30 bundle=slv0
 #pragma HLS INTERFACE s_axilite port=cmd_error_cnt_o offset=0x38 bundle=slv0
-#pragma HLS INTERFACE bram depth=512 port=communication_memory
+#pragma HLS INTERFACE bram depth=512 latency=1 port=communication_memory
 //#pragma HLS dataflow
     ap_uint<1> cyclic0_command;
     ap_uint<1> cyclic1_command;
@@ -76,7 +76,9 @@ void ics_if_main(
     ap_uint<17> rx_timeout_init;
     ap_uint<32> rx_word;
     uint8_t rx_char;
-    ap_uint<8> cyclic0_rx_count;
+    uint9_t rx_char_with_err_flag;
+    uint1_t parity_err;
+    uint8_t cyclic0_rx_count;
     ap_uint<17> rx_timeout;
     ap_uint<1> cyclic0_config_enable;
     ap_uint<16> cyclic0_config_interval;
@@ -84,15 +86,15 @@ void ics_if_main(
     ap_uint<16> cyclic1_config_interval;
     ap_uint<1> cyclic2_config_enable;
     ap_uint<16> cyclic2_config_interval;
-    static ap_uint<8> cmd_error_num;
+    static ap_uint<8> cmd_error_num = 0;
 
-    if(bit_period_config_i == 1){
+    if(bit_period_config_i == 0){
         *bit_period_o = 868;
         rx_timeout_init = 104160;//868 clock * 3 byte * 10 bit (start+ascii+stop) * 2 (tx and rx) * 2
-    }else if(bit_period_config_i == 2){
+    }else if(bit_period_config_i == 1){
         *bit_period_o = 160;
         rx_timeout_init = 19200;//160 clock * 3 byte * 10 bit (start+ascii+stop) * 2 (tx and rx) * 2
-    }else if(bit_period_config_i == 4){
+    }else if(bit_period_config_i == 2){
         *bit_period_o = 87;
         rx_timeout_init = 10440;//87 clock * 3 byte * 10 bit (start+ascii+stop) * 2 (tx and rx) * 2
     }else{
@@ -118,38 +120,47 @@ void ics_if_main(
             //get communication memory data
             *ics_rx_char_rst_o = 1;
             *ics_rx_char_rst_o = 0;
-            ap_uint<3> rx_count;
+            ap_uint<3> rx_char_count;
             ap_uint<5> id;
             for(ap_uint<6> i = 0; i < number_of_servos_i; ++i) {
                 rx_timeout = rx_timeout_init;
                 //tx
                 id = communication_memory[i] & 0x1f;
-                for(ap_uint<2> j = 0; j < 3; ++j) {
-                    ap_uint<8> ch = (communication_memory[i] >> (8 * j)) & 0xff;
-                    //if(j == 2) ch = ch | 0x100;
-                    ics_tx_char_o.write(ch);
-                }
+                //cmd
+                ap_uint<8> ch = communication_memory[i] & 0xff;
+                ics_tx_char_o.write(ch);
+                //pos_h
+                ch = (communication_memory[i] >> 23) & 0x7f;
+                ics_tx_char_o.write(ch);
+                //pos_l
+                ch = (communication_memory[i] >> 16) & 0x7f;
+                ics_tx_char_o.write(ch);
                 //rx loop
-                rx_count = 0;
+                rx_char_count = 0;
                 cyclic0_rx_count = ((communication_memory[i + RX_BUF_CYCLIC0_OFFSET] >> 8) + 1) & 0xff;
+                parity_err = 0;
                 while(true) {
                     if(!ics_rx_char_i.empty()){
-                        ics_rx_char_i.read(rx_char);
-                        if(rx_count == 0 && (((rx_char & 0xe0) != 0) || ((rx_char & 0x1f) != id))){
+                        ics_rx_char_i.read(rx_char_with_err_flag);
+                        rx_char = rx_char_with_err_flag & 0xff;
+                        parity_err = parity_err | rx_char_with_err_flag >> 8;
+                        if(rx_char_count < 3) {
+                            //do nothing. skip loopback character.
+                        } else if(rx_char_count == 3 && (((rx_char & 0xe0) != 0) || ((rx_char & 0x1f) != id))){
                             *cmd_error_cnt_o = ++cmd_error_num;
                             break;//cmd error
-                        } else if(rx_count == 0) {
+                        } else if(rx_char_count == 3) {
                             rx_word = rx_char + (cyclic0_rx_count << 8);
-                        } else if(rx_count == 1){
+                        } else if(rx_char_count == 4){
                             rx_word = rx_word | (rx_char << 23);//position upper 7bit
-                        } else if(rx_count == 2){
+                        } else if(rx_char_count == 5){
                             rx_word = rx_word | (rx_char << 16);//position lower 7bit
-                            communication_memory[i + RX_BUF_CYCLIC0_OFFSET] = rx_word;
+                            if(parity_err == 0) communication_memory[i + RX_BUF_CYCLIC0_OFFSET] = rx_word;
                             break;//end rx process
-                        } else if(rx_count >= 3){
+                        } else if(rx_char_count >= 3){
                             break; //error
                         }
-                        ++rx_count;
+                        ++rx_char_count;
                     }
                     --rx_timeout;
                     if(rx_timeout == 0) break;
@@ -161,6 +172,7 @@ void ics_if_main(
 //    else if(cyclic1_start_i.read_nb(cyclic1_command)){
 //
 //    }
+    *cmd_error_cnt_o = cmd_error_num;
     return;
 }
 

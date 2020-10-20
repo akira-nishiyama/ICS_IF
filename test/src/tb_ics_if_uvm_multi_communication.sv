@@ -8,7 +8,7 @@
 // https://opensource.org/licenses/mit-license.php
 //
 
-module tb_ics_if_uvm;
+module tb_ics_if_uvm_multi_communication;
     `include "uvm_macros.svh"
     import uvm_pkg::*;
     import simple_axi_uvm_pkg::*;
@@ -83,7 +83,7 @@ module tb_ics_if_uvm;
         .S_AXI_for_bram_wlast(mem_if.axi_wlast),
         .S_AXI_for_bram_wready(mem_if.axi_wready),
         .S_AXI_for_bram_wstrb(mem_if.axi_wstrb),
-        .S_AXI_for_bram_wvalid(mem_if.axi_wstrb),
+        .S_AXI_for_bram_wvalid(mem_if.axi_wvalid),
         //ics signal
         .ics_sig(ics_sig));
 
@@ -109,13 +109,13 @@ module tb_ics_if_uvm;
     assign uart_if.posi = ics_sig;
 
     initial begin
-        set_global_timeout(30000000ns);
+        set_global_timeout(200000000ns);
         `uvm_info("info", "Hello World from initial block", UVM_LOW)
         uvm_config_db#(virtual simple_axi_if)::set(uvm_root::get(), "uvm_test_top.tb_ics_if_uvm_env.agent.*", "vif", sif);
         uvm_config_db#(virtual simple_axi_if)::set(uvm_root::get(), "uvm_test_top.tb_ics_if_uvm_env.agent_mem.*", "vif", mem_if);
         uvm_config_db#(bit)::set(uvm_root::get(), "*", "axi_transaction_mode", 0);
         uvm_config_db#(virtual simple_uart_if)::set(uvm_root::get(),"uvm_test_top.tb_ics_if_uvm_env.ics_env.*", "vif",uart_if);
-        run_test("ics_if_basic_tx_test");
+        run_test("ics_if_multi_communication_test");
     end
 
 endmodule
